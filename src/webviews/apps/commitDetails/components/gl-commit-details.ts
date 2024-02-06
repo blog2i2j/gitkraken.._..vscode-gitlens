@@ -502,9 +502,12 @@ export class GlCommitDetails extends GlDetailsBase {
 					)}
 				</div>
 			</div>
-			${this.renderCommitMessage()} ${this.renderAutoLinks()}
-			${this.renderChangedFiles(this.isStash ? 'stash' : 'commit', this.renderCommitStats(details?.stats))}
-			${this.renderExplainAi()}
+			${this.renderCommitMessage()}
+			<webview-pane-group flexible>
+				${this.renderAutoLinks()}
+				${this.renderChangedFiles(this.isStash ? 'stash' : 'commit', this.renderCommitStats(details?.stats))}
+				${this.renderExplainAi()}
+			</webview-pane-group>
 		`;
 	}
 

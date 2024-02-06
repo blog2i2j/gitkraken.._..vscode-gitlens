@@ -18,6 +18,7 @@ export class WebviewPane extends LitElement {
 				display: flex;
 				flex-direction: column;
 				background-color: var(--vscode-sideBar-background);
+				min-height: 23px;
 			}
 
 			* {

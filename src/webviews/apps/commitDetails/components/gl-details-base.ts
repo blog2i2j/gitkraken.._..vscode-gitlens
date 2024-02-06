@@ -79,7 +79,7 @@ export class GlDetailsBase extends LitElement {
 		const treeModel = this.createTreeModel(mode, this.files ?? [], isTree, this.isCompact);
 
 		return html`
-			<webview-pane collapsable expanded>
+			<webview-pane collapsable expanded flexible>
 				<span slot="title">Files changed </span>
 				<span slot="subtitle" data-region="stats">${subtitle}</span>
 				<action-nav slot="actions">

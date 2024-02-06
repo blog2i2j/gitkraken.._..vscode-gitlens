@@ -1,1 +1,28 @@
 @use '../shared/styles/details-base';
+
+.commit-detail-panel {
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
+	overflow: auto;
+}
+
+.details-tab {
+	flex: none;
+}
+
+main {
+	flex: 1 1 auto;
+	// overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+gl-commit-details,
+gl-wip-details {
+	display: contents;
+}
+
+webview-pane-group {
+	height: 100%;
+}

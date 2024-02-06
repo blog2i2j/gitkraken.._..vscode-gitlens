@@ -6,6 +6,7 @@ import type { State, Wip } from '../../../commitDetails/protocol';
 import type { TreeItemAction, TreeItemBase } from '../../shared/components/tree/base';
 import type { File } from './gl-details-base';
 import { GlDetailsBase } from './gl-details-base';
+import '../../shared/components/panes/pane-group';
 
 @customElement('gl-wip-details')
 export class GlWipDetails extends GlDetailsBase {
@@ -46,21 +47,6 @@ export class GlWipDetails extends GlDetailsBase {
 							)}
 						</div>
 						<div class="top-details__actionbar-group">
-							${when(
-								this.orgSettings?.drafts !== false,
-								() => html`
-									<a
-										class="commit-action"
-										href="#"
-										data-action="create-patch"
-										aria-label="Share as Cloud Patch"
-										title="Share as Cloud Patch"
-									>
-										<code-icon icon="gl-cloud-patch-share"></code-icon>
-										<span class="top-details__sha">Share</span>
-									</a>
-								`,
-							)}
 							<a
 								class="commit-action"
 								href="#"
@@ -83,7 +69,25 @@ export class GlWipDetails extends GlDetailsBase {
 					</div>
 				</div>
 			</div>
-			${this.renderChangedFiles('wip')}
+			<webview-pane-group flexible>
+				${this.renderChangedFiles('wip')}
+				${when(
+					this.orgSettings?.drafts !== false,
+					() =>
+						html`<webview-pane expanded>
+							<span slot="title">Share</span>
+							<div class="section">
+								<p class="button-container">
+									<span class="button-group button-group--single">
+										<gl-button full data-action="create-patch">
+											<code-icon icon="gl-cloud-patch-share"></code-icon> Share as Cloud Patch
+										</gl-button>
+									</span>
+								</p>
+							</div>
+						</webview-pane>`,
+				)}
+			</webview-pane-group>
 		`;
 	}
 
