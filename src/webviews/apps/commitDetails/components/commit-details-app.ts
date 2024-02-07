@@ -286,6 +286,7 @@ export class GlCommitDetailsApp extends LitElement {
 						() =>
 							html`<gl-wip-details
 								.wip=${wip}
+								.wipPullRequest=${this.state?.wipPullRequest}
 								.files=${wip?.changes?.files}
 								.preferences=${this.state?.preferences}
 								.orgSettings=${this.state?.orgSettings}
