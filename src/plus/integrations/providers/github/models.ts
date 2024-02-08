@@ -166,7 +166,7 @@ export interface GitHubDetailedPullRequest extends GitHubPullRequest {
 	reviewRequests: {
 		nodes: {
 			asCodeOwner: boolean;
-			requestedReviewer: GitHubMember;
+			requestedReviewer: GitHubMember | null;
 		}[];
 	};
 	assignees: {
@@ -359,14 +359,20 @@ export function fromGitHubPullRequestDetailed(pr: GitHubDetailedPullRequest, pro
 		pr.totalCommentsCount,
 		pr.reactions.totalCount,
 		fromGitHubPullRequestReviewDecision(pr.reviewDecision),
-		pr.reviewRequests.nodes.map(r => ({
-			isCodeOwner: r.asCodeOwner,
-			reviewer: {
-				name: r.requestedReviewer.login,
-				avatarUrl: r.requestedReviewer.avatarUrl,
-				url: r.requestedReviewer.url,
-			},
-		})),
+		pr.reviewRequests.nodes
+			.map(r =>
+				r.requestedReviewer != null
+					? {
+							isCodeOwner: r.asCodeOwner,
+							reviewer: {
+								name: r.requestedReviewer.login,
+								avatarUrl: r.requestedReviewer.avatarUrl,
+								url: r.requestedReviewer.url,
+							},
+					  }
+					: undefined,
+			)
+			.filter(<T>(r?: T): r is T => Boolean(r)),
 		pr.assignees.nodes.map(r => ({
 			name: r.login,
 			avatarUrl: r.avatarUrl,

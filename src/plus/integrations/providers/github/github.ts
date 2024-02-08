@@ -654,6 +654,7 @@ export class GitHubApi implements Disposable {
 						owner {
 							login
 						}
+						viewerPermission
 					}
 					isCrossRepository
 				}
@@ -777,6 +778,7 @@ export class GitHubApi implements Disposable {
 							owner {
 								login
 							}
+							viewerPermission
 						}
 						isCrossRepository
 					}
