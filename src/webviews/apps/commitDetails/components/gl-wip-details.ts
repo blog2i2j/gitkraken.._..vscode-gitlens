@@ -67,8 +67,7 @@ export class GlWipDetails extends GlDetailsBase {
 		}
 
 		return html`<webview-pane collapsable>
-			<span slot="title">${changes}</span>
-			<span slot="subtitle">${branchName}</span>
+			<span slot="title">${branchName}</span>
 			<action-nav slot="actions">
 				<action-item
 					data-action="commit-actions"

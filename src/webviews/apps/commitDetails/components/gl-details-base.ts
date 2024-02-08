@@ -4,6 +4,7 @@ import { property } from 'lit/decorators.js';
 import type { TextDocumentShowOptions } from 'vscode';
 import type { HierarchicalItem } from '../../../../system/array';
 import { makeHierarchical } from '../../../../system/array';
+import { pluralize } from '../../../../system/string';
 import type { Preferences, State } from '../../../commitDetails/protocol';
 import type {
 	TreeItemAction,
@@ -54,7 +55,9 @@ export class GlDetailsBase extends LitElement {
 	}
 
 	protected renderChangedFiles(mode: Mode, subtitle?: TemplateResult<1>) {
-		const isTree = this.isTree(this.files?.length ?? 0);
+		const fileCount = this.files?.length ?? 0;
+		const isTree = this.isTree(fileCount);
+		const filesLabel = fileCount > 0 ? pluralize('file', fileCount) : 'Files';
 		let value = 'tree';
 		let icon = 'list-tree';
 		let label = 'View as Tree';
@@ -80,7 +83,7 @@ export class GlDetailsBase extends LitElement {
 
 		return html`
 			<webview-pane collapsable expanded flexible>
-				<span slot="title">Files changed </span>
+				<span slot="title">${filesLabel} changed</span>
 				<span slot="subtitle" data-region="stats">${subtitle}</span>
 				<action-nav slot="actions">
 					<action-item
