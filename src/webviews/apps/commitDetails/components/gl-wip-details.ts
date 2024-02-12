@@ -1,7 +1,6 @@
 import { html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { when } from 'lit/directives/when.js';
-import type { PullRequestShape } from '../../../../git/models/pullRequest';
 import { pluralize } from '../../../../system/string';
 import type { State, Wip } from '../../../commitDetails/protocol';
 import type { TreeItemAction, TreeItemBase } from '../../shared/components/tree/base';
@@ -17,19 +16,44 @@ export class GlWipDetails extends GlDetailsBase {
 	wip?: Wip;
 
 	@property({ type: Object })
-	wipPullRequest?: PullRequestShape;
-
-	@property({ type: Object })
 	orgSettings!: State['orgSettings'];
 
 	renderShare() {
+		const branch = this.wip?.branch;
+		if (branch?.upstream == null || branch.upstream.missing === true) {
+			return html`<webview-pane expanded>
+				<span slot="title">Share</span>
+				<div class="section">
+					<p class="button-container">
+						<span class="button-group button-group--single">
+							<gl-button full data-action="publish-branch">
+								<code-icon icon="cloud-upload"></code-icon> Publish Branch
+							</gl-button>
+							${when(
+								this.orgSettings?.drafts !== false,
+								() => html`
+									<gl-button
+										density="compact"
+										data-action="create-patch"
+										title="Share as Cloud Patch"
+									>
+										<code-icon icon="gl-cloud-patch-share"></code-icon>
+									</gl-button>
+								`,
+							)}
+						</span>
+					</p>
+				</div>
+			</webview-pane>`;
+		}
+
 		if (this.orgSettings?.drafts === false) return undefined;
 
 		let label = 'Share as Cloud Patch';
 		let action = 'create-patch';
-		const pr = this.wipPullRequest;
+		const pr = this.wip?.pullRequest;
 		if (pr != null) {
-			if (this.wipPullRequest?.author.name.endsWith('(you)')) {
+			if (pr.author.name.endsWith('(you)')) {
 				label = 'Share with PR Participants';
 				action = 'create-patch';
 			} else {
@@ -66,6 +90,7 @@ export class GlWipDetails extends GlDetailsBase {
 			changes = pluralize('change', this.files.length);
 		}
 
+		const pr = this.wip?.pullRequest;
 		return html`<webview-pane collapsable>
 			<span slot="title">${branchName}</span>
 			<action-nav slot="actions">
@@ -103,15 +128,15 @@ export class GlWipDetails extends GlDetailsBase {
 					)}
 				</p>
 				${when(
-					this.wipPullRequest != null,
+					pr != null,
 					() => html`
 						<issue-pull-request
 							type="pr"
-							name="${this.wipPullRequest!.title}"
-							url="${this.wipPullRequest!.url}"
-							key="#${this.wipPullRequest!.id}"
-							status="${this.wipPullRequest!.state}"
-							.date=${this.wipPullRequest!.date}
+							name="${pr!.title}"
+							url="${pr!.url}"
+							key="#${pr!.id}"
+							status="${pr!.state}"
+							.date=${pr!.date}
 						></issue-pull-request>
 					`,
 				)}

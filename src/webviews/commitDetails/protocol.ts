@@ -51,9 +51,17 @@ export interface WipChange {
 
 export type Mode = 'commit' | 'wip';
 
+export interface GitBranchShape {
+	name: string;
+	repoPath: string;
+	upstream?: { name: string; missing: boolean };
+}
+
 export interface Wip {
 	changes: WipChange | undefined;
 	repositoryCount: number;
+	branch?: GitBranchShape;
+	pullRequest?: PullRequestShape;
 }
 
 export interface State extends WebviewState {
@@ -76,7 +84,6 @@ export interface State extends WebviewState {
 	autolinkedIssues?: IssueOrPullRequest[];
 	pullRequest?: PullRequestShape;
 	wip?: Wip;
-	wipPullRequest?: PullRequestShape;
 }
 
 export type ShowCommitDetailsViewCommandArgs = string[];
@@ -140,7 +147,7 @@ export interface DidChangeParams {
 }
 export const DidChangeNotificationType = new IpcNotificationType<DidChangeParams>('commit/didChange', true);
 
-export type DidChangeWipStateParams = Pick<Serialized<State>, 'wip' | 'wipPullRequest'>;
+export type DidChangeWipStateParams = Pick<Serialized<State>, 'wip'>;
 export const DidChangeWipStateNotificationType = new IpcNotificationType<DidChangeWipStateParams>(
 	'commit/didChange/wip',
 );
