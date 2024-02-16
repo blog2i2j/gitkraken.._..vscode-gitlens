@@ -285,14 +285,18 @@ ul {
 		&-group {
 			display: flex;
 			flex: none;
+			flex-direction: row;
+			max-width: 100%;
 		}
 
 		&--highlight {
-			margin-left: 0.25em;
 			padding: 0 4px 2px 4px;
 			border: 1px solid var(--color-background--level-15);
 			border-radius: 0.3rem;
 			font-family: var(--vscode-editor-font-family);
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
 		}
 
 		&.is-pinned {

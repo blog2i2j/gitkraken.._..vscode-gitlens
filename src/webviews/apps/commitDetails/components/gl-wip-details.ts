@@ -1,12 +1,13 @@
-import { html } from 'lit';
+import { defineGkElement, Popover } from '@gitkraken/shared-web-components';
+import { html, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { when } from 'lit/directives/when.js';
-import { pluralize } from '../../../../system/string';
 import type { State, Wip } from '../../../commitDetails/protocol';
 import type { TreeItemAction, TreeItemBase } from '../../shared/components/tree/base';
 import type { File } from './gl-details-base';
 import { GlDetailsBase } from './gl-details-base';
 import '../../shared/components/panes/pane-group';
+import '../../shared/components/pills/tracking';
 
 @customElement('gl-wip-details')
 export class GlWipDetails extends GlDetailsBase {
@@ -16,7 +17,13 @@ export class GlWipDetails extends GlDetailsBase {
 	wip?: Wip;
 
 	@property({ type: Object })
-	orgSettings!: State['orgSettings'];
+	orgSettings?: State['orgSettings'];
+
+	constructor() {
+		super();
+
+		defineGkElement(Popover);
+	}
 
 	renderShare() {
 		const branch = this.wip?.branch;
@@ -30,7 +37,7 @@ export class GlWipDetails extends GlDetailsBase {
 								<code-icon icon="cloud-upload"></code-icon> Publish Branch
 							</gl-button>
 							${when(
-								this.orgSettings?.drafts !== false,
+								this.orgSettings?.drafts === true,
 								() => html`
 									<gl-button
 										density="compact"
@@ -47,7 +54,7 @@ export class GlWipDetails extends GlDetailsBase {
 			</webview-pane>`;
 		}
 
-		if (this.orgSettings?.drafts === false) return undefined;
+		if (this.orgSettings?.drafts !== true) return undefined;
 
 		let label = 'Share as Cloud Patch';
 		let action = 'create-patch';
@@ -63,7 +70,7 @@ export class GlWipDetails extends GlDetailsBase {
 		}
 
 		return html`<webview-pane expanded>
-			<span slot="title">Share</span>
+			<span slot="title" hidden>Share</span>
 			<div class="section">
 				<p class="button-container">
 					<span class="button-group button-group--single">
@@ -72,8 +79,84 @@ export class GlWipDetails extends GlDetailsBase {
 						</gl-button>
 					</span>
 				</p>
+				${when(
+					pr == null,
+					() =>
+						html` <p class="button-container">
+							<span class="button-group button-group--single">
+								<gl-button full appearance="secondary" data-action="create-pr">
+									<code-icon icon="git-pull-request"></code-icon> Create Pull Request
+								</gl-button>
+							</span>
+						</p>`,
+				)}
 			</div>
 		</webview-pane>`;
+	}
+
+	renderRepoState() {
+		// || this.wip.repositoryCount < 2
+		if (this.wip == null) return nothing;
+
+		const changes = this.wip.changes;
+		if (changes == null) return nothing;
+
+		return html`
+			<div class="top-details__actionbar top-details__actionbar--selector">
+				<div class="top-details__actionbar-group top-details__actionbar-group--selector">
+					<span class="top-details__actionbar--highlight">${changes.repository.name}</span>
+				</div>
+			</div>
+		`;
+	}
+
+	renderBranchState() {
+		if (this.wip == null) return nothing;
+
+		const changes = this.wip.changes;
+		const branch = this.wip.branch;
+		if (changes == null || branch == null) return nothing;
+
+		const ahead = branch.tracking?.ahead ?? 0;
+		const behind = branch.tracking?.behind ?? 0;
+
+		const fetchLabel = behind > 0 ? 'Pull' : ahead > 0 ? 'Push' : 'Fetch';
+		const fetchIcon = behind > 0 ? 'arrow-down' : ahead > 0 ? 'arrow-up' : 'sync';
+
+		return html`
+			<div class="top-details__actionbar top-details__actionbar--selector">
+				<div class="top-details__actionbar-group top-details__actionbar-group--selector">
+					<a href="#" class="commit-action"
+						>&nbsp;${branch.name}<code-icon icon="chevron-down"></code-icon
+					></a>
+					${when(
+						this.wip.pullRequest != null,
+						() =>
+							html`<gk-popover placement="bottom" class="top-details__actionbar-pr">
+								<a href="#" class="commit-action top-details__actionbar--pr" slot="trigger"
+									><code-icon icon="git-pull-request"></code-icon
+									><span>#${this.wip!.pullRequest!.id}</span></a
+								>
+								<div class="popover-content">
+									<issue-pull-request
+										type="pr"
+										name="${this.wip!.pullRequest!.title}"
+										url="${this.wip!.pullRequest!.url}"
+										key="#${this.wip!.pullRequest!.id}"
+										status="${this.wip!.pullRequest!.state}"
+										.date=${this.wip!.pullRequest!.date}
+									></issue-pull-request>
+								</div>
+							</gk-popover>`,
+					)}
+					<code-icon icon="chevron-right"></code-icon>
+					<a href="#" class="commit-action">
+						<code-icon icon="${fetchIcon}"></code-icon> ${fetchLabel}&nbsp;
+						<gl-tracking-pill .ahead=${ahead} .behind=${behind}></gl-tracking-pill>
+					</a>
+				</div>
+			</div>
+		`;
 	}
 
 	renderBranchDetails() {
@@ -83,11 +166,6 @@ export class GlWipDetails extends GlDetailsBase {
 				this.wip.repositoryCount > 1
 					? `${this.wip.changes.repository.name}:${this.wip.changes.branchName}`
 					: this.wip.changes.branchName;
-		}
-
-		let changes = 'Loading...';
-		if (this.files != null) {
-			changes = pluralize('change', this.files.length);
 		}
 
 		const pr = this.wip?.pullRequest;
@@ -114,16 +192,13 @@ export class GlWipDetails extends GlDetailsBase {
 						() => 'Loading...',
 						() =>
 							html`<span
-								>${pluralize('change', this.files!.length)} on
-								<span
-									class="top-details__actionbar--highlight"
-									title="${this.wip!.repositoryCount > 1
-										? `${this.wip!.changes!.repository.name}:${this.wip!.changes!.branchName}`
-										: this.wip!.changes!.branchName}"
-									>${this.wip!.repositoryCount > 1
-										? `${this.wip!.changes!.repository.name}:${this.wip!.changes!.branchName}`
-										: this.wip!.changes!.branchName}</span
-								></span
+								class="top-details__actionbar--highlight"
+								title="${this.wip!.repositoryCount > 1
+									? `${this.wip!.changes!.repository.name}:${this.wip!.changes!.branchName}`
+									: this.wip!.changes!.branchName}"
+								>${this.wip!.repositoryCount > 1
+									? `${this.wip!.changes!.repository.name}:${this.wip!.changes!.branchName}`
+									: this.wip!.changes!.branchName}</span
 							>`,
 					)}
 				</p>
@@ -145,35 +220,54 @@ export class GlWipDetails extends GlDetailsBase {
 	}
 
 	override render() {
+		if (this.wip == null) return nothing;
+
 		return html`
-			<div class="top-details" hidden>
+			${this.renderRepoState()} ${this.renderBranchState()}
+			<div class="top-details">
 				<div class="top-details__top-menu">
-					<div class="top-details__actionbar">
+					<div class="top-details__actionbar" hidden>
 						<div class="top-details__actionbar-group">
 							${when(
 								this.wip?.changes == null || this.files == null,
-								() => 'Loading...',
+								() => html`<span>Loading...</span>`,
 								() =>
 									html`<span
-										>${pluralize('change', this.files!.length)} on
-										<span
-											class="top-details__actionbar--highlight"
-											title="${this.wip!.repositoryCount > 1
-												? `${this.wip!.changes!.repository.name}:${
-														this.wip!.changes!.branchName
-												  }`
-												: this.wip!.changes!.branchName}"
-											>${this.wip!.repositoryCount > 1
-												? `${this.wip!.changes!.repository.name}:${
-														this.wip!.changes!.branchName
-												  }`
-												: this.wip!.changes!.branchName}</span
-										></span
+										class="top-details__actionbar--highlight"
+										title="${this.wip!.repositoryCount > 1
+											? `${this.wip!.changes!.repository.name}:${this.wip!.changes!.branchName}`
+											: this.wip!.changes!.branchName}"
+										>${this.wip!.repositoryCount > 1
+											? `${this.wip!.changes!.repository.name}:${this.wip!.changes!.branchName}`
+											: this.wip!.changes!.branchName}</span
 									>`,
+							)}
+							${when(
+								this.wip?.pullRequest != null,
+								() =>
+									html`<gk-popover placement="bottom" class="top-details__actionbar-pr">
+										<a
+											href="#"
+											class="top-details__actionbar--highlight top-details__actionbar--pr"
+											slot="trigger"
+											><code-icon icon="git-pull-request"></code-icon
+											><span>#${this.wip?.pullRequest?.id}</span></a
+										>
+										<div class="popover-content">
+											<issue-pull-request
+												type="pr"
+												name="${this.wip!.pullRequest!.title}"
+												url="${this.wip!.pullRequest!.url}"
+												key="#${this.wip!.pullRequest!.id}"
+												status="${this.wip!.pullRequest!.state}"
+												.date=${this.wip!.pullRequest!.date}
+											></issue-pull-request>
+										</div>
+									</gk-popover>`,
 							)}
 						</div>
 						<div class="top-details__actionbar-group">
-							<a
+							<!-- <a
 								class="commit-action"
 								href="#"
 								data-action="commit-actions"
@@ -181,7 +275,7 @@ export class GlWipDetails extends GlDetailsBase {
 								aria-label="Open SCM view"
 								title="Open SCM view"
 								><code-icon icon="source-control"></code-icon
-							></a>
+							></a> -->
 							<a
 								class="commit-action"
 								href="#"
@@ -195,9 +289,7 @@ export class GlWipDetails extends GlDetailsBase {
 					</div>
 				</div>
 			</div>
-			<webview-pane-group flexible>
-				${this.renderBranchDetails()}${this.renderChangedFiles('wip')}${this.renderShare()}
-			</webview-pane-group>
+			<webview-pane-group flexible>${this.renderChangedFiles('wip')}${this.renderShare()}</webview-pane-group>
 		`;
 	}
 

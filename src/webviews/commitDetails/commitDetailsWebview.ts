@@ -99,6 +99,7 @@ type RepositorySubscription = { repo: Repository; subscription: Disposable };
 interface WipContext extends Wip {
 	branch?: GitBranch;
 	pullRequest?: PullRequest;
+	repo: Repository;
 }
 
 interface Context {
@@ -656,6 +657,7 @@ export class CommitDetailsWebviewProvider
 			const changes = await this.getWipChange(repository);
 			wip = {
 				changes: changes,
+				repo: repository,
 				repositoryCount: this.container.git.openRepositoryCount,
 			};
 
@@ -1234,6 +1236,10 @@ function serializeBranch(branch?: GitBranch): GitBranchShape | undefined {
 		name: branch.name,
 		repoPath: branch.repoPath,
 		upstream: branch.upstream,
+		tracking: {
+			ahead: branch.state.ahead,
+			behind: branch.state.behind,
+		},
 	};
 }
 
@@ -1244,6 +1250,11 @@ function serializeWipContext(wip?: WipContext): Wip | undefined {
 		changes: wip.changes,
 		repositoryCount: wip.repositoryCount,
 		branch: serializeBranch(wip.branch),
+		repo: {
+			name: wip.repo.name,
+			path: wip.repo.path,
+			// type: wip.repo.provider.name,
+		},
 		pullRequest: wip.pullRequest != null ? serializePullRequest(wip.pullRequest) : undefined,
 	};
 }
