@@ -1,5 +1,5 @@
 import { Badge, defineGkElement } from '@gitkraken/shared-web-components';
-import { html, LitElement } from 'lit';
+import { html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { when } from 'lit/directives/when.js';
@@ -48,6 +48,7 @@ import '../../shared/components/commit/commit-stats';
 import '../../shared/components/webview-pane';
 import './gl-commit-details';
 import './gl-wip-details';
+import './gl-inspect-nav';
 
 export const uncommittedSha = '0000000000000000000000000000000000000000';
 
@@ -238,12 +239,73 @@ export class GlCommitDetailsApp extends LitElement {
 		super.disconnectedCallback();
 	}
 
+	renderTopInspect() {
+		if (this.state?.commit == null) return nothing;
+
+		return html`<gl-inspect-nav
+			?uncommitted=${this.isUncommitted}
+			?pinned=${this.state?.pinned}
+			.navigation=${this.state?.navigationStack}
+			.shortSha=${this.state?.commit.shortSha ?? ''}
+		></gl-inspect-nav>`;
+	}
+
+	renderTopWip() {
+		if (this.state?.wip == null) return nothing;
+
+		return html``;
+	}
+
+	renderTopSection() {
+		const followTooltip = this.isStash ? 'Stash' : 'Commit';
+
+		const isWip = this.state?.mode === 'wip';
+
+		const wip = this.state?.wip;
+		const wipTooltip = wip?.changes?.files.length
+			? ` - ${pluralize('change', wip.changes.files.length)} on ${
+					wip.repositoryCount > 1
+						? `${wip.changes.repository.name}:${wip.changes.branchName}`
+						: wip.changes.branchName
+			  }`
+			: '';
+
+		return html`
+			<div class="inspect-header">
+				<nav class="inspect-header__tabs">
+					<button
+						class="inspect-header__tab${!isWip ? ' is-active' : ''}"
+						data-action="details"
+						title="${followTooltip}"
+					>
+						<code-icon icon="gl-gitlens-inspect"></code-icon>
+					</button>
+					<button
+						class="inspect-header__tab${isWip ? ' is-active' : ''}"
+						data-action="wip"
+						title="Working Changes${wipTooltip}"
+					>
+						<code-icon icon="gl-repositories-view"></code-icon>
+					</button>
+				</nav>
+				<div class="inspect-header__content">
+					${when(
+						this.state?.mode !== 'wip',
+						() => this.renderTopInspect(),
+						() => this.renderTopWip(),
+					)}
+				</div>
+			</div>
+		`;
+	}
+
 	override render() {
 		const wip = this.state?.wip;
 
 		return html`
 			<div class="commit-detail-panel scrollable">
-				<nav class="details-tab">
+				${this.renderTopSection()}
+				<nav class="details-tab" hidden>
 					<button
 						class="details-tab__item ${this.state?.mode === 'commit' ? ' is-active' : ''}"
 						data-action="details"

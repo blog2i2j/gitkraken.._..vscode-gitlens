@@ -1,5 +1,15 @@
 @use '../shared/styles/details-base';
 
+.vscode-high-contrast,
+.vscode-dark {
+	--gl-color-background-counter: #fff;
+}
+
+.vscode-high-contrast-light,
+.vscode-light {
+	--gl-color-background-counter: #000;
+}
+
 .commit-detail-panel {
 	height: 100vh;
 	display: flex;
@@ -78,6 +88,54 @@ webview-pane-group {
 
 		code-icon {
 			color: var(--vscode-gitlens-mergedPullRequestIconColor);
+		}
+	}
+}
+
+.inspect-header {
+	display: flex;
+	flex-direction: row;
+	align-items: flex-start; // center;
+	justify-content: space-between;
+	gap: 0.4rem;
+	border-top: 2px solid var(--color-background--level-15);
+
+	&__tabs {
+		flex: none;
+		display: flex;
+		flex-direction: row;
+		// gap: -0.8rem;
+		align-items: flex-start;
+	}
+
+	&__tab {
+		appearance: none;
+		background-color: var(--color-background--level-10);
+		color: var(--color-foreground--85);
+		border: none;
+		border-radius: 0 0 0.5rem 0.5rem;
+		padding: 0.4rem 1.2rem;
+		cursor: pointer;
+
+		&:last-child {
+			margin-inline-start: -0.6rem;
+		}
+
+		&.is-active {
+			position: relative;
+			z-index: 1;
+			background-color: color-mix(in srgb, var(--gl-color-background-counter) 25%, var(--color-background));
+			padding-block: 0.6rem;
+			box-shadow: 0 -2px 0 0 var(--vscode-button-hoverBackground);
+			color: var(--color-foreground);
+		}
+	}
+
+	&__content {
+		flex: 1;
+		margin: {
+			top: 0.3rem;
+			right: 0.3rem;
 		}
 	}
 }

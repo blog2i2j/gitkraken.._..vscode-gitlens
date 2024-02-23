@@ -392,7 +392,7 @@ export class GlCommitDetails extends GlDetailsBase {
 							></a>
 							<a
 								class="commit-action${this.navigation.back ? '' : ' is-disabled'}"
-								aria-disabled="${this.navigation.back ? nothing : 'true'}"
+								aria-disabled="${this.navigation.back ? 'nothing' : 'true'}"
 								href="#"
 								data-action="back"
 								aria-label="Back"
