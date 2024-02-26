@@ -49,6 +49,7 @@ import '../../shared/components/webview-pane';
 import './gl-commit-details';
 import './gl-wip-details';
 import './gl-inspect-nav';
+import './gl-status-nav';
 
 export const uncommittedSha = '0000000000000000000000000000000000000000';
 
@@ -253,7 +254,7 @@ export class GlCommitDetailsApp extends LitElement {
 	renderTopWip() {
 		if (this.state?.wip == null) return nothing;
 
-		return html``;
+		return html`<gl-status-nav .wip=${this.state.wip}></gl-status-nav>`;
 	}
 
 	renderTopSection() {

@@ -25,6 +25,67 @@ export class GlWipDetails extends GlDetailsBase {
 		defineGkElement(Popover);
 	}
 
+	renderShareTop() {
+		const branch = this.wip?.branch;
+		const filesCount = this.files?.length ?? 0;
+
+		if (branch?.upstream == null || branch.upstream.missing === true) {
+			return html`<div class="section">
+				<p class="button-container">
+					<span class="button-group button-group--single">
+						<gl-button full data-action="publish-branch">
+							<code-icon icon="cloud-upload"></code-icon> Publish Branch
+						</gl-button>
+						${when(
+							this.orgSettings?.drafts === true && filesCount > 0,
+							() => html`
+								<gl-button density="compact" data-action="create-patch" title="Share as Cloud Patch">
+									<code-icon icon="gl-cloud-patch-share"></code-icon>
+								</gl-button>
+							`,
+						)}
+					</span>
+				</p>
+			</div>`;
+		}
+
+		if (this.orgSettings?.drafts !== true) return undefined;
+
+		let label = 'Share as Cloud Patch';
+		let action = 'create-patch';
+		const pr = this.wip?.pullRequest;
+		if (pr != null) {
+			if (pr.author.name.endsWith('(you)')) {
+				label = 'Share with PR Participants';
+				action = 'create-patch';
+			} else {
+				label = 'Share Suggested Changes';
+				action = 'create-patch';
+			}
+		}
+
+		return html`<div class="section">
+			<p class="button-container">
+				<span class="button-group button-group--single">
+					<gl-button full data-action="${action}">
+						<code-icon icon="gl-cloud-patch-share"></code-icon> ${label}
+					</gl-button>
+				</span>
+			</p>
+			${when(
+				pr == null,
+				() =>
+					html` <p class="button-container">
+						<span class="button-group button-group--single">
+							<gl-button full appearance="secondary" data-action="create-pr">
+								<code-icon icon="git-pull-request"></code-icon> Create Pull Request
+							</gl-button>
+						</span>
+					</p>`,
+			)}
+		</div>`;
+	}
+
 	renderShare() {
 		const branch = this.wip?.branch;
 		if (branch?.upstream == null || branch.upstream.missing === true) {
@@ -223,7 +284,7 @@ export class GlWipDetails extends GlDetailsBase {
 		if (this.wip == null) return nothing;
 
 		return html`
-			${this.renderRepoState()} ${this.renderBranchState()}
+			${this.renderRepoState()}${this.renderBranchState()}${this.renderShareTop()}
 			<div class="top-details">
 				<div class="top-details__top-menu">
 					<div class="top-details__actionbar" hidden>

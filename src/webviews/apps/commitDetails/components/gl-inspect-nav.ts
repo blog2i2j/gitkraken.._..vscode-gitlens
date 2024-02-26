@@ -82,6 +82,28 @@ export class GlInspectNav extends LitElement {
 		return actions;
 	}
 
+	constructor() {
+		super();
+		this.addEventListener('click', this);
+	}
+
+	handleEvent(e: Event) {
+		const targetEl = e.target as HTMLElement;
+		const action = targetEl.dataset.action;
+		if (action == null) return;
+
+		if (action === 'commit-actions') {
+			const altKey = e instanceof MouseEvent ? e.altKey : false;
+			this.fireEvent('commit-actions', { action: targetEl.dataset.actionType, alt: altKey });
+		} else {
+			this.fireEvent(action);
+		}
+	}
+
+	fireEvent(type: string, detail?: Record<string, unknown>) {
+		this.dispatchEvent(new CustomEvent(`gl-${type}`, { detail: detail }));
+	}
+
 	override render() {
 		const pinLabel = this.pinned
 			? 'Unpin this Commit\nRestores Automatic Following'
