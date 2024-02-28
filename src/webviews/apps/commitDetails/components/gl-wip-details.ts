@@ -220,66 +220,6 @@ export class GlWipDetails extends GlDetailsBase {
 		`;
 	}
 
-	renderBranchDetails() {
-		let branchName = '';
-		if (this.wip?.changes != null) {
-			branchName =
-				this.wip.repositoryCount > 1
-					? `${this.wip.changes.repository.name}:${this.wip.changes.branchName}`
-					: this.wip.changes.branchName;
-		}
-
-		const pr = this.wip?.pullRequest;
-		return html`<webview-pane collapsable>
-			<span slot="title">${branchName}</span>
-			<action-nav slot="actions">
-				<action-item
-					data-action="commit-actions"
-					data-action-type="scm"
-					label="Open SCM view"
-					icon="source-control"
-				></action-item>
-				<action-item
-					data-action="commit-actions"
-					data-action-type="graph"
-					label="Open in Commit Graph"
-					icon="gl-graph"
-				></action-item>
-			</action-nav>
-			<div class="section">
-				<p hidden>
-					${when(
-						this.wip?.changes == null || this.files == null,
-						() => 'Loading...',
-						() =>
-							html`<span
-								class="top-details__actionbar--highlight"
-								title="${this.wip!.repositoryCount > 1
-									? `${this.wip!.changes!.repository.name}:${this.wip!.changes!.branchName}`
-									: this.wip!.changes!.branchName}"
-								>${this.wip!.repositoryCount > 1
-									? `${this.wip!.changes!.repository.name}:${this.wip!.changes!.branchName}`
-									: this.wip!.changes!.branchName}</span
-							>`,
-					)}
-				</p>
-				${when(
-					pr != null,
-					() => html`
-						<issue-pull-request
-							type="pr"
-							name="${pr!.title}"
-							url="${pr!.url}"
-							key="#${pr!.id}"
-							status="${pr!.state}"
-							.date=${pr!.date}
-						></issue-pull-request>
-					`,
-				)}
-			</div>
-		</webview-pane>`;
-	}
-
 	override render() {
 		if (this.wip == null) return nothing;
 
