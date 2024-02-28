@@ -82,12 +82,7 @@ export class GlInspectNav extends LitElement {
 		return actions;
 	}
 
-	constructor() {
-		super();
-		this.addEventListener('click', this);
-	}
-
-	handleEvent(e: Event) {
+	handleAction(e: Event) {
 		const targetEl = e.target as HTMLElement;
 		const action = targetEl.dataset.action;
 		if (action == null) return;
@@ -112,10 +107,10 @@ export class GlInspectNav extends LitElement {
 		let forwardLabel = 'Forward';
 		let backLabel = 'Back';
 		if (this.navigation?.hint) {
-			if (this.pinned) {
+			if (!this.pinned) {
 				forwardLabel += ` - ${this.navigation.hint}`;
 			} else {
-				backLabel = ` - ${this.navigation.hint}`;
+				backLabel += ` - ${this.navigation.hint}`;
 			}
 		}
 
@@ -133,6 +128,7 @@ export class GlInspectNav extends LitElement {
 [⌥] Pick Commit..."
 							title="Copy SHA
 [⌥] Pick Commit..."
+							@click=${this.handleAction}
 						>
 							<code-icon icon="git-commit"></code-icon>
 							<span class="top-details__sha" data-region="shortsha">${this.shortSha}</span></a
@@ -147,6 +143,7 @@ export class GlInspectNav extends LitElement {
 					data-action="pin"
 					aria-label="${pinLabel}"
 					title="${pinLabel}"
+					@click=${this.handleAction}
 					><code-icon icon="${this.pinned ? 'gl-pinned-filled' : 'pin'}" data-region="commit-pin"></code-icon
 				></a>
 				<a
@@ -156,6 +153,7 @@ export class GlInspectNav extends LitElement {
 					data-action="back"
 					aria-label="${backLabel}"
 					title="${backLabel}"
+					@click=${this.handleAction}
 					><code-icon icon="arrow-left" data-region="commit-back"></code-icon
 				></a>
 				${when(
@@ -167,21 +165,9 @@ export class GlInspectNav extends LitElement {
 							data-action="forward"
 							aria-label="${forwardLabel}"
 							title="${forwardLabel}"
+							@click=${this.handleAction}
 							><code-icon icon="arrow-right" data-region="commit-forward"></code-icon
 						></a>
-					`,
-				)}
-				${when(
-					this.navigation?.hint,
-					() => html`
-						<a
-							class="commit-action commit-action--emphasis-low"
-							href="#"
-							title="View this Commit"
-							data-action="${this.pinned ? 'forward' : 'back'}"
-							><code-icon icon="git-commit"></code-icon
-							><span data-region="commit-hint">${this.navigation!.hint}</span></a
-						>
 					`,
 				)}
 				<!-- TODO: add a spacer -->
@@ -195,6 +181,7 @@ export class GlInspectNav extends LitElement {
 							data-action-type="scm"
 							aria-label="Open SCM view"
 							title="Open SCM view"
+							@click=${this.handleAction}
 							><code-icon icon="source-control"></code-icon
 						></a>
 					`,
@@ -206,6 +193,7 @@ export class GlInspectNav extends LitElement {
 					data-action-type="graph"
 					aria-label="Open in Commit Graph"
 					title="Open in Commit Graph"
+					@click=${this.handleAction}
 					><code-icon icon="gl-graph"></code-icon
 				></a>
 				${when(
@@ -218,6 +206,7 @@ export class GlInspectNav extends LitElement {
 							data-action-type="more"
 							aria-label="Show Commit Actions"
 							title="Show Commit Actions"
+							@click=${this.handleAction}
 							><code-icon icon="kebab-vertical"></code-icon
 						></a>
 					`,

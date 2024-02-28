@@ -37,6 +37,7 @@ import { DOM } from '../../shared/dom';
 import { assertsSerialized, HostIpc } from '../../shared/ipc';
 import type { GlCommitDetails } from './gl-commit-details';
 import type { FileChangeListItemDetail } from './gl-details-base';
+import type { GlInspectNav } from './gl-inspect-nav';
 import '../../shared/components/button';
 import '../../shared/components/actions/action-item';
 import '../../shared/components/actions/action-nav';
@@ -138,17 +139,19 @@ export class GlCommitDetailsApp extends LitElement {
 			this._hostIpc.onReceiveMessage(e => this.onMessageReceived(e)),
 			this._hostIpc,
 
-			DOM.on('[data-action="commit-actions"]', 'click', e => this.onCommitActions(e)),
+			DOM.on<GlInspectNav, { action: string; alt: boolean }>('gl-inspect-nav', 'gl-commit-action', e =>
+				this.onCommitActions(e),
+			),
 			DOM.on('[data-action="pick-commit"]', 'click', e => this.onPickCommit(e)),
 			DOM.on('[data-action="wip"]', 'click', e => this.onSwitchMode(e, 'wip')),
 			DOM.on('[data-action="details"]', 'click', e => this.onSwitchMode(e, 'commit')),
 			DOM.on('[data-action="search-commit"]', 'click', e => this.onSearchCommit(e)),
 			DOM.on('[data-action="autolink-settings"]', 'click', e => this.onAutolinkSettings(e)),
 			DOM.on('[data-action="files-layout"]', 'click', e => this.onToggleFilesLayout(e)),
-			DOM.on('[data-action="pin"]', 'click', e => this.onTogglePin(e)),
-			DOM.on('[data-action="back"]', 'click', e => this.onNavigate('back', e)),
-			DOM.on('[data-action="forward"]', 'click', e => this.onNavigate('forward', e)),
-			DOM.on('[data-action="create-patch"]', 'click', _e => this.onCreatePatchFromWip(true)),
+			DOM.on<GlInspectNav, undefined>('gl-inspect-nav', 'gl-pin', () => this.onTogglePin()),
+			DOM.on<GlInspectNav, undefined>('gl-inspect-nav', 'gl-back', () => this.onNavigate('back')),
+			DOM.on<GlInspectNav, undefined>('gl-inspect-nav', 'gl-forward', () => this.onNavigate('forward')),
+			DOM.on('[data-action="create-patch"]', 'click', () => this.onCreatePatchFromWip(true)),
 			DOM.on<WebviewPane, WebviewPaneExpandedChangeEventDetail>(
 				'[data-region="rich-pane"]',
 				'expanded-change',
@@ -425,13 +428,11 @@ export class GlCommitDetailsApp extends LitElement {
 		this._hostIpc.sendCommand(UpdatePreferencesCommandType, { autolinksExpanded: e.expanded });
 	}
 
-	private onNavigate(direction: 'back' | 'forward', e: Event) {
-		e.preventDefault();
+	private onNavigate(direction: 'back' | 'forward') {
 		this._hostIpc.sendCommand(NavigateCommitCommandType, { direction: direction });
 	}
 
-	private onTogglePin(e: MouseEvent) {
-		e.preventDefault();
+	private onTogglePin() {
 		this._hostIpc.sendCommand(PinCommitCommandType, { pin: !this.state!.pinned });
 	}
 
@@ -483,19 +484,14 @@ export class GlCommitDetailsApp extends LitElement {
 		this._hostIpc.sendCommand(UnstageFileCommandType, e);
 	}
 
-	private onCommitActions(e: MouseEvent) {
-		e.preventDefault();
+	private onCommitActions(e: CustomEvent<{ action: string; alt: boolean }>) {
 		if (this.state?.commit === undefined) {
-			e.stopPropagation();
 			return;
 		}
 
-		const action = (e.target as HTMLElement)?.getAttribute('data-action-type');
-		if (action == null) return;
-
 		this._hostIpc.sendCommand(CommitActionsCommandType, {
-			action: action as CommitActionsParams['action'],
-			alt: e.altKey,
+			action: e.detail.action as CommitActionsParams['action'],
+			alt: e.detail.alt,
 		});
 	}
 }
