@@ -54,12 +54,6 @@ export class GlStatusNav extends LitElement {
 		const branch = this.wip.branch;
 		if (changes == null || branch == null) return nothing;
 
-		// const ahead = branch.tracking?.ahead ?? 0;
-		// const behind = branch.tracking?.behind ?? 0;
-
-		// const fetchLabel = behind > 0 ? 'Pull' : ahead > 0 ? 'Push' : 'Fetch';
-		// const fetchIcon = behind > 0 ? 'arrow-down' : ahead > 0 ? 'arrow-up' : 'sync';
-
 		return html`
 			<div class="group">
 				${when(
@@ -67,7 +61,7 @@ export class GlStatusNav extends LitElement {
 					() =>
 						html`<gk-popover placement="bottom" class="top-details__actionbar-pr">
 							<a href="#" class="commit-action top-details__actionbar--pr" slot="trigger"
-								><code-icon icon="git-pull-request"></code-icon
+								><code-icon icon="git-pull-request" class="pr"></code-icon
 								><span>#${this.wip!.pullRequest!.id}</span></a
 							>
 							<div class="popover-content">

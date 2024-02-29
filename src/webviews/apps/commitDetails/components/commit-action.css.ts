@@ -53,4 +53,8 @@ export const commitActionStyles = css`
 	.commit-action--emphasis-low:not(:hover, :focus, :active) {
 		opacity: 0.5;
 	}
+
+	.pr {
+		color: var(--vscode-gitlens-mergedPullRequestIconColor);
+	}
 `;
