@@ -3,6 +3,7 @@ import { css } from 'lit';
 export const baseStyles = css`
 	:host {
 		display: inline-block;
+		vertical-align: text-bottom;
 	}
 
 	.pill {
