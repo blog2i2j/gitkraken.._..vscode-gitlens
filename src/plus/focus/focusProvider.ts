@@ -1,8 +1,7 @@
 import type { CancellationToken } from 'vscode';
-import { Disposable, EventEmitter } from 'vscode';
+import { Disposable, env, EventEmitter, Uri } from 'vscode';
 import type { Container } from '../../container';
 import { CancellationError } from '../../errors';
-import { getBranchId } from '../../git/models/branch';
 import type { SearchedIssue } from '../../git/models/issue';
 import { RepositoryAccessLevel } from '../../git/models/issue';
 import type { SearchedPullRequest } from '../../git/models/pullRequest';
@@ -11,11 +10,12 @@ import {
 	PullRequestReviewDecision,
 	PullRequestStatusCheckRollupState,
 } from '../../git/models/pullRequest';
-import type { GitBranchReference } from '../../git/models/reference';
-import { createReference } from '../../git/models/reference';
-import type { Repository } from '../../git/models/repository';
+import type { RemoteProviderReference } from '../../git/models/remoteProvider';
 import type { GkProviderId, RepositoryIdentityDescriptor } from '../../gk/models/repositoryIdentities';
+import { configuration } from '../../system/configuration';
 import { getSettledValue } from '../../system/promise';
+import type { UriTypes } from '../../uris/deepLinks/deepLink';
+import { DeepLinkType } from '../../uris/deepLinks/deepLink';
 import { HostedProviderId } from '../integrations/providers/models';
 import type { EnrichableItem, EnrichedItem } from './enrichmentService';
 
@@ -68,6 +68,7 @@ const prActionsMap = new Map<FocusActionCategory, FocusAction[]>([
 
 export type FocusItem = {
 	type: 'pullRequest' | 'issue';
+	provider: RemoteProviderReference;
 	id: string;
 	uniqueId: string;
 	title: string;
@@ -87,7 +88,6 @@ export type FocusItem = {
 	snoozed: boolean;
 	sortTime: number;
 
-	repository?: Repository;
 	repositoryIdentity?: RepositoryIdentityDescriptor;
 	ref?: {
 		branchName: string;
@@ -216,7 +216,42 @@ export class FocusProvider implements Disposable {
 		this._onDidChange.fire();
 	}
 
-	async locateItemRepository(
+	async merge(item: FocusItem): Promise<void> {
+		if (item.uniqueId == null || item.ref?.sha == null) return;
+		// TODO: Include other providers.
+		if (item.provider.id !== 'github') return;
+		const integrations = this.container.integrations.get(HostedProviderId.GitHub);
+		await integrations.mergePullRequest({ id: item.uniqueId, headRefSha: item.ref.sha });
+		this.refresh();
+	}
+
+	async switchTo(item: FocusItem): Promise<void> {
+		const deepLinkUrl = await this.getItemBranchDeepLink(item);
+		if (deepLinkUrl == null) return;
+
+		await env.openExternal(deepLinkUrl);
+	}
+
+	private async getItemBranchDeepLink(item: FocusItem): Promise<Uri | undefined> {
+		if (item.type !== 'pullRequest' || item.ref == null || item.repositoryIdentity?.remote?.url == null)
+			return undefined;
+		const schemeOverride = configuration.get('deepLinks.schemeOverride');
+		const scheme = !schemeOverride ? 'vscode' : schemeOverride === true ? env.uriScheme : schemeOverride;
+
+		// TODO: Get the proper pull URL from the provider, rather than tacking .git at the end of the
+		// url from the head ref.
+		return env.asExternalUri(
+			Uri.parse(
+				`${scheme}://${this.container.context.extension.id}/${'link' satisfies UriTypes}/${
+					DeepLinkType.Repository
+				}/-/${DeepLinkType.Branch}/${item.ref.branchName}?url=${encodeURIComponent(
+					ensureRemoteUrl(item.repositoryIdentity.remote.url),
+				)}&action=switch`,
+			),
+		);
+	}
+
+	/* async locateItemRepository(
 		item: FocusItem,
 		options?: { force?: boolean; openIfNeeded?: boolean; keepOpen?: boolean; prompt?: boolean },
 	): Promise<Repository | undefined> {
@@ -250,7 +285,7 @@ export class FocusProvider implements Disposable {
 			name: remoteBranchName,
 			remote: true,
 		});
-	}
+	} */
 
 	async getCategorizedItems(
 		options?: { force?: boolean; issues?: boolean; prs?: boolean },
@@ -398,6 +433,7 @@ function createFocusItem(
 	return 'pullRequest' in item
 		? {
 				type: 'pullRequest',
+				provider: item.pullRequest.provider,
 				id: item.pullRequest.id,
 				uniqueId: item.pullRequest.nodeId!,
 				title: item.pullRequest.title,
@@ -442,6 +478,7 @@ function createFocusItem(
 		  }
 		: {
 				type: 'issue',
+				provider: item.issue.provider,
 				id: item.issue.id,
 				uniqueId: item.issue.nodeId!,
 				title: item.issue.title,
@@ -505,4 +542,12 @@ export function sortFocusItems(items: FocusItem[]) {
 			focusActionCategories.indexOf(b.actionableCategory) - focusActionCategories.indexOf(a.actionableCategory) ||
 			b.sortTime - a.sortTime,
 	);
+}
+
+function ensureRemoteUrl(url: string) {
+	if (url.startsWith('https')) {
+		return url.endsWith('.git') ? url : `${url}.git`;
+	}
+
+	return url;
 }

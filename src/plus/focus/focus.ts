@@ -1,5 +1,4 @@
 import { ThemeIcon, Uri } from 'vscode';
-import { getSteps } from '../../commands/gitCommands.utils';
 import type {
 	PartialStepState,
 	StepGenerator,
@@ -31,7 +30,6 @@ import { command } from '../../system/command';
 import { fromNow } from '../../system/date';
 import { interpolate } from '../../system/string';
 import { openUrl } from '../../system/utils';
-import { HostedProviderId } from '../integrations/providers/models';
 import type { FocusAction, FocusActionCategory, FocusGroup, FocusItem } from './focusProvider';
 import { groupAndSortFocusItems } from './focusProvider';
 
@@ -132,12 +130,7 @@ export class FocusCommand extends QuickCommand<State> {
 
 			switch (state.action) {
 				case 'merge': {
-					// TODO: Move all the action logic to a Focus Provider fn and use eventing to refresh.
-					if (state.item.uniqueId == null || state.item.ref?.sha == null) break;
-					// TODO: This should get the provider from the item.
-					const github = this.container.integrations.get(HostedProviderId.GitHub);
-					await github.mergePullRequest({ id: state.item.uniqueId, headRefSha: state.item.ref.sha });
-					void this.container.focus.getCategorizedItems({ force: true });
+					await this.container.focus.merge(state.item);
 					break;
 				}
 				case 'open':
@@ -145,8 +138,7 @@ export class FocusCommand extends QuickCommand<State> {
 					break;
 				case 'review':
 				case 'switch': {
-					// TODO
-					const repo = await this.container.focus.locateItemRepository(state.item, {
+					/*const repo = await this.container.focus.locateItemRepository(state.item, {
 						openIfNeeded: true,
 						prompt: true,
 						keepOpen: true,
@@ -154,11 +146,6 @@ export class FocusCommand extends QuickCommand<State> {
 					if (repo == null) break;
 					state.item.repository = repo;
 					const ref = await this.container.focus.getItemBranchRef(state.item);
-					// TODO: need to find matching local branches with the ref as their upstream, and:
-					// If none, pass in the remote ref to the switch,
-					// If one, pass in the local branch to the switch,
-					// If multiple, need to update the switch to filter down to just those branches as choices
-					// const localBranches = ref == null ? undefined : await repo.getBranches({ filter: b => b.upstream?.name === ref.ref && b.remote === false && b.name === state.item.ref?.branchName });
 					yield* getSteps(
 						this.container,
 						{
@@ -169,7 +156,8 @@ export class FocusCommand extends QuickCommand<State> {
 							},
 						},
 						this.pickedVia,
-					);
+					); */
+					void this.container.focus.switchTo(state.item);
 					break;
 				}
 				// case 'change-reviewers':
@@ -300,6 +288,10 @@ export class FocusCommand extends QuickCommand<State> {
 
 					case UnpinQuickInputButton:
 						await this.container.focus.unpin(item);
+						break;
+
+					case MergeQuickInputButton:
+						await this.container.focus.merge(item);
 						break;
 				}
 
