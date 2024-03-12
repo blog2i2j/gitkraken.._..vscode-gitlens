@@ -596,7 +596,7 @@ export abstract class HostingIntegration<
 	}
 
 	protected abstract mergeProviderPullRequest(
-		session: AuthenticationSession,
+		session: ProviderAuthenticationSession,
 		pr: PullRequest | { id: string; headRefSha: string },
 		options?: {
 			mergeMethod?: PullRequestMergeMethod;

@@ -232,7 +232,7 @@ export class FocusCommand extends QuickCommand<State> {
 								)} by @${i.author} \u2022 ${i.repoAndOwner}`,
 
 								buttons: buttons,
-								iconPath: Uri.parse(i.avatarUrl),
+								iconPath: i.avatarUrl != null ? Uri.parse(i.avatarUrl) : undefined,
 								item: i,
 								picked: i.id === picked,
 							};
@@ -321,7 +321,7 @@ export class FocusCommand extends QuickCommand<State> {
 				detail: interpolate(actionGroupMap.get(state.item.actionableCategory)![1], {
 					author: state.item.author,
 				}),
-				iconPath: Uri.parse(state.item.avatarUrl),
+				iconPath: state.item.avatarUrl != null ? Uri.parse(state.item.avatarUrl) : undefined,
 			}),
 			createQuickPickSeparator(),
 			createDirectiveQuickPickItem(Directive.Noop, false, {

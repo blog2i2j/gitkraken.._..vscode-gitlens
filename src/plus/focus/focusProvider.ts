@@ -10,13 +10,13 @@ import {
 	PullRequestReviewDecision,
 	PullRequestStatusCheckRollupState,
 } from '../../git/models/pullRequest';
-import type { RemoteProviderReference } from '../../git/models/remoteProvider';
+import type { ProviderReference } from '../../git/models/remoteProvider';
 import type { GkProviderId, RepositoryIdentityDescriptor } from '../../gk/models/repositoryIdentities';
 import { configuration } from '../../system/configuration';
 import { getSettledValue } from '../../system/promise';
 import type { UriTypes } from '../../uris/deepLinks/deepLink';
 import { DeepLinkType } from '../../uris/deepLinks/deepLink';
-import { HostedProviderId } from '../integrations/providers/models';
+import { HostingIntegrationId } from '../integrations/providers/models';
 import type { EnrichableItem, EnrichedItem } from './enrichmentService';
 
 export const focusActionCategories = [
@@ -68,14 +68,14 @@ const prActionsMap = new Map<FocusActionCategory, FocusAction[]>([
 
 export type FocusItem = {
 	type: 'pullRequest' | 'issue';
-	provider: RemoteProviderReference;
+	provider: ProviderReference;
 	id: string;
 	uniqueId: string;
 	title: string;
 	date: Date;
 	author: string;
-	avatarUrl: string;
-	repoAndOwner: string;
+	avatarUrl?: string;
+	repoAndOwner?: string;
 	url: string;
 
 	enrichable: EnrichableItem;
@@ -135,7 +135,7 @@ export class FocusProvider implements Disposable {
 	private async getIssues(options?: { cancellation?: CancellationToken; force?: boolean }) {
 		if (options?.force || this._issues == null || this._issues.expiresAt < Date.now()) {
 			this._issues = {
-				promise: this.container.integrations.getMyIssues([HostedProviderId.GitHub], options?.cancellation),
+				promise: this.container.integrations.getMyIssues([HostingIntegrationId.GitHub], options?.cancellation),
 				expiresAt: Date.now() + cacheExpiration,
 			};
 		}
@@ -148,7 +148,7 @@ export class FocusProvider implements Disposable {
 		if (options?.force || this._prs == null || this._prs.expiresAt < Date.now()) {
 			this._prs = {
 				promise: this.container.integrations.getMyPullRequests(
-					[HostedProviderId.GitHub],
+					[HostingIntegrationId.GitHub],
 					options?.cancellation,
 				),
 				expiresAt: Date.now() + cacheExpiration,
@@ -220,7 +220,7 @@ export class FocusProvider implements Disposable {
 		if (item.uniqueId == null || item.ref?.sha == null) return;
 		// TODO: Include other providers.
 		if (item.provider.id !== 'github') return;
-		const integrations = this.container.integrations.get(HostedProviderId.GitHub);
+		const integrations = this.container.integrations.get(HostingIntegrationId.GitHub);
 		await integrations.mergePullRequest({ id: item.uniqueId, headRefSha: item.ref.sha });
 		this.refresh();
 	}
@@ -485,7 +485,7 @@ function createFocusItem(
 				date: item.issue.updatedDate,
 				author: item.issue.author.name,
 				avatarUrl: item.issue.author.avatarUrl,
-				repoAndOwner: `${item.issue.repository.owner}/${item.issue.repository.repo}`,
+				repoAndOwner: `${item.issue.repository?.owner}/${item.issue.repository?.repo}`,
 				url: item.issue.url,
 
 				enrichable: {
@@ -502,15 +502,18 @@ function createFocusItem(
 				pinned: enriched?.type === 'pin',
 				snoozed: enriched?.type === 'snooze',
 				sortTime: item.issue.updatedDate.getTime(),
-				repositoryIdentity: {
-					name: item.issue.repository.repo,
-					provider: {
-						// TODO: fix this typing, set according to item
-						id: 'github' as GkProviderId,
-						repoDomain: item.issue.repository.owner,
-						repoName: item.issue.repository.repo,
-					},
-				},
+				repositoryIdentity:
+					item.issue.repository != null
+						? {
+								name: item.issue.repository?.repo,
+								provider: {
+									// TODO: fix this typing, set according to item
+									id: 'github' as GkProviderId,
+									repoDomain: item.issue.repository?.owner,
+									repoName: item.issue.repository?.repo,
+								},
+						  }
+						: undefined,
 		  };
 }
 
