@@ -48,6 +48,10 @@ export class GlWipDetails extends GlDetailsBase {
 		};
 	}
 
+	override get filesChangedPaneLabel() {
+		return 'Working Changes';
+	}
+
 	renderPrimaryAction() {
 		if (this.draftsEnabled && this.filesCount > 0) {
 			let label = 'Share as Cloud Patch';

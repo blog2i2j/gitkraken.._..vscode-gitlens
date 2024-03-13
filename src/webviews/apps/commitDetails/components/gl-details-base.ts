@@ -54,10 +54,15 @@ export class GlDetailsBase extends LitElement {
 		return this.preferences?.indentGuides ?? 'none';
 	}
 
+	get filesChangedPaneLabel() {
+		const fileCount = this.files?.length ?? 0;
+		const filesLabel = fileCount > 0 ? pluralize('file', fileCount) : 'Files';
+		return `${filesLabel} changed`;
+	}
+
 	protected renderChangedFiles(mode: Mode, subtitle?: TemplateResult<1>) {
 		const fileCount = this.files?.length ?? 0;
 		const isTree = this.isTree(fileCount);
-		const filesLabel = fileCount > 0 ? pluralize('file', fileCount) : 'Files';
 		let value = 'tree';
 		let icon = 'list-tree';
 		let label = 'View as Tree';
@@ -83,7 +88,7 @@ export class GlDetailsBase extends LitElement {
 
 		return html`
 			<webview-pane collapsable expanded flexible>
-				<span slot="title">${filesLabel} changed</span>
+				<span slot="title">${this.filesChangedPaneLabel}</span>
 				<span slot="subtitle" data-region="stats">${subtitle}</span>
 				<action-nav slot="actions">
 					<action-item
