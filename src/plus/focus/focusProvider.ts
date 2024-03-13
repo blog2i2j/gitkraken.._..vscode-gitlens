@@ -61,9 +61,9 @@ const prActionsMap = new Map<FocusActionCategory, FocusAction[]>([
 	['mergeable-conflicts', ['switch', 'open']],
 	['failed-checks', ['switch', 'open']],
 	['conflicts', ['switch', 'open']],
-	['needs-review', ['review', 'decline-review', 'open']],
+	['needs-review', ['review', /* 'decline-review', */ 'open']],
 	['changes-requested', ['switch', 'open']],
-	['waiting-for-review', ['nudge', 'change-reviewers', 'switch', 'open']],
+	['waiting-for-review', [/* 'nudge', 'change-reviewers', */ 'switch', 'open']],
 ]);
 
 export type FocusItem = {
