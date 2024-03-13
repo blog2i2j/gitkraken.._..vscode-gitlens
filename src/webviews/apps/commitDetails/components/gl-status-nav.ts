@@ -19,16 +19,34 @@ export class GlStatusNav extends LitElement {
 			:host {
 				display: flex;
 				flex-direction: row;
-				flex-wrap: wrap;
+				/* flex-wrap: wrap; */
 				align-items: center;
 				justify-content: space-between;
+			}
+
+			.commit-action--overflowed {
+				min-width: 0;
+			}
+
+			.branch {
+				min-width: 0;
+				max-width: fit-content;
+				white-space: nowrap;
+				text-overflow: ellipsis;
+				overflow: hidden;
 			}
 
 			.group {
 				display: flex;
 				flex: none;
 				flex-direction: row;
+				min-width: 0;
 				max-width: 100%;
+			}
+
+			.group:first-child {
+				min-width: 0;
+				flex: 0 1 auto;
 			}
 
 			.popover-content {
@@ -59,8 +77,8 @@ export class GlStatusNav extends LitElement {
 				${when(
 					this.wip.pullRequest != null,
 					() =>
-						html`<gk-popover placement="bottom" class="top-details__actionbar-pr">
-							<a href="#" class="commit-action top-details__actionbar--pr" slot="trigger"
+						html`<gk-popover placement="bottom">
+							<a href="#" class="commit-action" slot="trigger"
 								><code-icon icon="git-pull-request" class="pr"></code-icon
 								><span>#${this.wip!.pullRequest!.id}</span></a
 							>
@@ -76,12 +94,15 @@ export class GlStatusNav extends LitElement {
 							</div>
 						</gk-popover>`,
 				)}
-				<a href="#" class="commit-action">
-					${when(
-						this.wip.pullRequest == null,
-						() => html`<code-icon icon="git-branch"></code-icon>`,
-					)}&nbsp;${branch.name}<code-icon icon="chevron-down"></code-icon
+				<a href="#" class="commit-action commit-action--overflowed">
+					${when(this.wip.pullRequest == null, () => html`<code-icon icon="git-branch"></code-icon>`)}<span
+						class="branch"
+						>${branch.name}</span
+					><code-icon icon="chevron-down" size="10"></code-icon
 				></a>
+			</div>
+			<div class="group">
+				<a href="#" class="commit-action"><code-icon icon="sync"></code-icon></a>
 			</div>
 		`;
 	}
