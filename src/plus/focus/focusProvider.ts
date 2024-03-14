@@ -437,7 +437,7 @@ function createFocusItem(
 				id: item.pullRequest.id,
 				uniqueId: item.pullRequest.nodeId!,
 				title: item.pullRequest.title,
-				date: item.pullRequest.date,
+				date: item.pullRequest.updatedDate,
 				author: item.pullRequest.author.name,
 				avatarUrl: item.pullRequest.author.avatarUrl,
 				repoAndOwner: `${item.pullRequest.repository.owner}/${item.pullRequest.repository.repo}`,
@@ -456,7 +456,7 @@ function createFocusItem(
 
 				pinned: enriched?.type === 'pin',
 				snoozed: enriched?.type === 'snooze',
-				sortTime: item.pullRequest.date.getTime(),
+				sortTime: item.pullRequest.updatedDate.getTime(),
 				repositoryIdentity: {
 					remote: { url: item.pullRequest.refs?.head?.url },
 					name: item.pullRequest.repository.repo,
