@@ -53,22 +53,39 @@ export class GlWipDetails extends GlDetailsBase {
 	}
 
 	renderPrimaryAction() {
-		if (this.draftsEnabled && this.filesCount > 0) {
+		if (this.draftsEnabled) {
 			let label = 'Share as Cloud Patch';
 			let action = 'create-patch';
 			const pr = this.wip?.pullRequest;
 			if (pr != null) {
-				if (pr.author.name.endsWith('(you)')) {
+				const isMe = pr.author.name.endsWith('(you)');
+				if (isMe) {
 					label = 'Share with PR Participants';
 					action = 'create-patch';
 				} else {
-					label = 'Share Suggested Changes';
+					label = `Start Review for PR #${pr.id}`;
 					action = 'create-patch';
 				}
+
+				return html`<p class="button-container">
+					<span class="button-group button-group--single">
+						<gl-button full data-action="${action}" @click=${() => this.onDataActionClick(action)}>
+							<code-icon icon="gl-cloud-patch-share"></code-icon> ${label}
+						</gl-button>
+						<gl-button
+							density="compact"
+							data-action="create-patch"
+							title="Share as Cloud Patch"
+							@click=${() => this.onDataActionClick('create-patch')}
+						>
+							<code-icon icon="gl-cloud-patch-share"></code-icon>
+						</gl-button>
+					</span>
+				</p>`;
 			}
 			return html`<p class="button-container">
 				<span class="button-group button-group--single">
-					<gl-button full data-action="${action}">
+					<gl-button full data-action="${action}" @click=${() => this.onDataActionClick(action)}>
 						<code-icon icon="gl-cloud-patch-share"></code-icon> ${label}
 					</gl-button>
 				</span>
@@ -78,7 +95,11 @@ export class GlWipDetails extends GlDetailsBase {
 		if (this.isUnpublished) {
 			return html`<p class="button-container">
 				<span class="button-group button-group--single">
-					<gl-button full data-action="publish-branch">
+					<gl-button
+						full
+						data-action="publish-branch"
+						@click=${() => this.onDataActionClick('publish-branch')}
+					>
 						<code-icon icon="cloud-upload"></code-icon> Publish Branch
 					</gl-button>
 				</span>
@@ -95,7 +116,11 @@ export class GlWipDetails extends GlDetailsBase {
 
 		return html`<p class="button-container">
 			<span class="button-group button-group--single">
-				<gl-button full data-action="${fetchLabel.toLowerCase()}">
+				<gl-button
+					full
+					data-action="${fetchLabel.toLowerCase()}"
+					@click=${() => this.onDataActionClick(fetchLabel.toLowerCase())}
+				>
 					<code-icon icon="${fetchIcon}"></code-icon> ${fetchLabel}&nbsp;
 					<gl-tracking-pill .ahead=${ahead} .behind=${behind}></gl-tracking-pill>
 				</gl-button>
@@ -104,11 +129,16 @@ export class GlWipDetails extends GlDetailsBase {
 	}
 
 	renderSecondaryAction() {
-		const canShare = this.draftsEnabled && this.filesCount > 0;
+		const canShare = this.draftsEnabled;
 		if (this.isUnpublished && canShare) {
 			return html`<p class="button-container">
 				<span class="button-group button-group--single">
-					<gl-button full appearance="secondary" data-action="publish-branch">
+					<gl-button
+						full
+						appearance="secondary"
+						data-action="publish-branch"
+						@click=${() => this.onDataActionClick('publish-branch')}
+					>
 						<code-icon icon="cloud-upload"></code-icon> Publish Branch
 					</gl-button>
 				</span>
@@ -125,7 +155,12 @@ export class GlWipDetails extends GlDetailsBase {
 
 		return html`<p class="button-container">
 			<span class="button-group button-group--single">
-				<gl-button full appearance="secondary" data-action="${fetchLabel.toLowerCase()}">
+				<gl-button
+					full
+					appearance="secondary"
+					data-action="${fetchLabel.toLowerCase()}"
+					@click=${() => this.onDataActionClick(fetchLabel.toLowerCase())}
+				>
 					<code-icon icon="${fetchIcon}"></code-icon> ${fetchLabel}&nbsp;
 					<gl-tracking-pill .ahead=${ahead} .behind=${behind}></gl-tracking-pill>
 				</gl-button>
@@ -236,7 +271,7 @@ export class GlWipDetails extends GlDetailsBase {
 										url="${this.wip!.pullRequest!.url}"
 										key="#${this.wip!.pullRequest!.id}"
 										status="${this.wip!.pullRequest!.state}"
-										.date=${this.wip!.pullRequest!.date}
+										.date=${this.wip!.pullRequest!.updatedDate}
 									></issue-pull-request>
 								</div>
 							</gk-popover>`,
@@ -256,7 +291,47 @@ export class GlWipDetails extends GlDetailsBase {
 
 		return html`
 			${this.renderActions()}
-			<webview-pane-group flexible>${this.renderChangedFiles('wip')}</webview-pane-group>
+			<webview-pane-group flexible>
+				${when(
+					this.wip.pullRequest != null,
+					() => html`
+						<webview-pane collapsable flexible>
+							<span slot="title">#${this.wip?.pullRequest?.id} Suggested Changes</span>
+							<div class="section">
+								<issue-pull-request
+									type="pr"
+									name="${this.wip!.pullRequest!.title}"
+									url="${this.wip!.pullRequest!.url}"
+									key="#${this.wip!.pullRequest!.id}"
+									status="${this.wip!.pullRequest!.state}"
+									.date=${this.wip!.pullRequest!.updatedDate}
+								></issue-pull-request>
+							</div>
+						</webview-pane>
+					`,
+				)}
+				${when(
+					this.branchState != null && (this.branchState.ahead > 0 || this.branchState.behind > 0),
+					() => html`
+						<webview-pane collapsable flexible>
+							<span slot="title">Incoming / Outgoing</span>
+							<gl-tree>
+								<gl-tree-item branch .expanded=${false}>
+									<code-icon slot="icon" icon="arrow-circle-down"></code-icon>
+									Incoming Changes
+									<span slot="decorations">${this.branchState!.behind ?? 0}</span>
+								</gl-tree-item>
+								<gl-tree-item branch .expanded=${false}>
+									<code-icon slot="icon" icon="arrow-circle-up"></code-icon>
+									Outgoing Changes
+									<span slot="decorations">${this.branchState!.ahead ?? 0}</span>
+								</gl-tree-item>
+							</gl-tree>
+						</webview-pane>
+					`,
+				)}
+				${this.renderChangedFiles('wip')}
+			</webview-pane-group>
 		`;
 	}
 
@@ -270,5 +345,15 @@ export class GlWipDetails extends GlDetailsBase {
 			return [openFile, { icon: 'remove', label: 'Unstage changes', action: 'file-unstage' }];
 		}
 		return [openFile, { icon: 'plus', label: 'Stage changes', action: 'file-stage' }];
+	}
+
+	onDataActionClick(name: string) {
+		void this.dispatchEvent(new CustomEvent('data-action', { detail: { name: name } }));
+	}
+}
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'gl-wip-details': GlWipDetails;
 	}
 }

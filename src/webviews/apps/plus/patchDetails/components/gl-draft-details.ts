@@ -364,7 +364,7 @@ export class GlDraftDetails extends GlTreeBase {
 				<div class="user-selection-container scrollable">
 					${repeat(
 						draft.userSelections,
-						userSelection => userSelection.member.id,
+						userSelection => userSelection.member.id ?? userSelection.user?.id,
 						userSelection => this.renderUserSelection(userSelection, draft.role),
 					)}
 				</div>

@@ -94,7 +94,7 @@ export class GlStatusNav extends LitElement {
 							</div>
 						</gk-popover>`,
 				)}
-				<a href="#" class="commit-action commit-action--overflowed">
+				<a href="command:gitlens.views.switchToBranch" class="commit-action commit-action--overflowed">
 					${when(this.wip.pullRequest == null, () => html`<code-icon icon="git-branch"></code-icon>`)}<span
 						class="branch"
 						>${branch.name}</span
@@ -102,10 +102,16 @@ export class GlStatusNav extends LitElement {
 				></a>
 			</div>
 			<div class="group">
-				<a href="#" class="commit-action"><code-icon icon="sync"></code-icon></a>
+				<a href="command:gitlens.fetchRepositories" class="commit-action" title="Fetch"
+					><code-icon icon="sync"></code-icon
+				></a>
 			</div>
 		`;
 	}
+
+	onSwitchClick() {}
+
+	onFetchClick() {}
 }
 
 declare global {

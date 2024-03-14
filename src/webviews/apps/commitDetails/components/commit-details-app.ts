@@ -151,7 +151,7 @@ export class GlCommitDetailsApp extends LitElement {
 			DOM.on<GlInspectNav, undefined>('gl-inspect-nav', 'gl-pin', () => this.onTogglePin()),
 			DOM.on<GlInspectNav, undefined>('gl-inspect-nav', 'gl-back', () => this.onNavigate('back')),
 			DOM.on<GlInspectNav, undefined>('gl-inspect-nav', 'gl-forward', () => this.onNavigate('forward')),
-			DOM.on('[data-action="create-patch"]', 'click', () => this.onCreatePatchFromWip(true)),
+			DOM.on('[data-action="create-patch"]', 'click', _e => this.onCreatePatchFromWip(true)),
 			DOM.on<WebviewPane, WebviewPaneExpandedChangeEventDetail>(
 				'[data-region="rich-pane"]',
 				'expanded-change',
@@ -185,6 +185,9 @@ export class GlCommitDetailsApp extends LitElement {
 			),
 			DOM.on<GlCommitDetails, FileChangeListItemDetail>('gl-wip-details', 'file-unstage', e =>
 				this.onUnstageFile(e.detail),
+			),
+			DOM.on<GlCommitDetails, { name: string }>('gl-wip-details', 'data-action', e =>
+				this.onWipDataAction(e.detail.name),
 			),
 		];
 	}
@@ -338,6 +341,23 @@ export class GlCommitDetailsApp extends LitElement {
 
 	protected override createRenderRoot() {
 		return this;
+	}
+
+	private onWipDataAction(name: string) {
+		switch (name) {
+			// case 'create-patch':
+			// 	this.onCreatePatchFromWip();
+			// 	break;
+			case 'push':
+				this.onCommandClickedCore('gitlens.pushRepositories');
+				break;
+			case 'fetch':
+				this.onCommandClickedCore('gitlens.fetchRepositories');
+				break;
+			case 'publish-branch':
+				this.onCommandClickedCore('gitlens.publishRepository');
+				break;
+		}
 	}
 
 	private onCreatePatchFromWip(checked: boolean | 'staged' = true) {
