@@ -220,22 +220,18 @@ export class FocusCommand extends QuickCommand<State> {
 							const buttons = [];
 
 							if (i.actionableCategory === 'mergeable') {
-								buttons.push(
-									MergeQuickInputButton,
-									i.pinned ? UnpinQuickInputButton : PinQuickInputButton,
-								);
-							} else if (i.pinned) {
-								buttons.push(UnpinQuickInputButton);
-							} else if (i.snoozed) {
-								buttons.push(UnsnoozeQuickInputButton);
-							} else {
-								buttons.push(PinQuickInputButton, SnoozeQuickInputButton);
+								buttons.push(MergeQuickInputButton);
 							}
+
+							buttons.push(
+								i.pinned ? UnpinQuickInputButton : PinQuickInputButton,
+								i.snoozed ? UnsnoozeQuickInputButton : SnoozeQuickInputButton,
+							);
 
 							return {
 								label: i.title,
 								// description: `${i.repoAndOwner}#${i.id}, by @${i.author}`,
-								description: `#${i.id}`,
+								description: `#${i.id} ${i.isNew ? '(New since last view)' : ''}`,
 								detail: `      ${actionGroupMap.get(i.actionableCategory)![0]} \u2022  ${fromNow(
 									i.date,
 								)} by @${i.author} \u2022 ${i.repoAndOwner}`,
