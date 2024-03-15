@@ -517,7 +517,8 @@ function createFocusItem(
 		  };
 }
 
-export function groupAndSortFocusItems(items: FocusItem[]) {
+export function groupAndSortFocusItems(items?: FocusItem[]) {
+	if (items == null || items.length === 0) return new Map<FocusGroup, FocusItem[]>();
 	const grouped = new Map<FocusGroup, FocusItem[]>(focusGroups.map(g => [g, []]));
 
 	sortFocusItems(items);

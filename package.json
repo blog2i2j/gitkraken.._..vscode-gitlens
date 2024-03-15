@@ -2811,12 +2811,19 @@
 						"scope": "window",
 						"order": 22
 					},
-					"gitlens.focus.experimental.indicators.refreshRate": {
+					"gitlens.focus.experimental.indicators.data.enabled": {
+						"type": "boolean",
+						"default": true,
+						"markdownDescription": "(Experimental) Specifies whether the status bar indicators will fetch data for _Focus_.",
+						"scope": "window",
+						"order": 23
+					},
+					"gitlens.focus.experimental.indicators.data.refreshRate": {
 						"type": "number",
 						"default": 30,
 						"markdownDescription": "(Experimental) Specifies the rate (in minutes) at which to refresh the status bar indicators for _Focus_. Use 0 to disable automatic refreshing",
 						"scope": "window",
-						"order": 23
+						"order": 24
 					}
 				}
 			},
@@ -5306,6 +5313,12 @@
 				"title": "Split Focus",
 				"category": "GitLens",
 				"icon": "$(split-horizontal)"
+			},
+			{
+				"command": "gitlens.focus.experimental.updateIndicators",
+				"title": "Update Focus Indicators",
+				"category": "GitLens",
+				"icon": "$(sync)"
 			},
 			{
 				"command": "gitlens.showGraph",
@@ -9109,6 +9122,10 @@
 				{
 					"command": "gitlens.focus.split",
 					"when": "gitlens:enabled && config.gitlens.focus.allowMultiple"
+				},
+				{
+					"command": "gitlens.focus.experimental.updateIndicators",
+					"when": "false"
 				},
 				{
 					"command": "gitlens.showGraph",
