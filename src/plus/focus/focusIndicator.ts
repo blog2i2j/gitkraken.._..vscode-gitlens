@@ -57,7 +57,7 @@ export class FocusIndicator implements Disposable {
 
 		this._statusBarFocus = window.createStatusBarItem('gitlens.focus', StatusBarAlignment.Left, 10000 - 2);
 		this._statusBarFocus.name = 'GitLens Focus';
-		this._statusBarFocus.text = '$(target)';
+		this._statusBarFocus.text = '$(loading~spin)';
 		this._statusBarFocus.tooltip = 'Loading...';
 		this.updateStatusBarFocusCommand();
 		this._statusBarFocus.show();
@@ -101,14 +101,14 @@ export class FocusIndicator implements Disposable {
 
 	private updateStatusBar(statusBarFocus: StatusBarItem, categorizedItems: FocusItem[]) {
 		let color: string | ThemeColor | undefined = undefined;
-		let topItem: FocusItem | undefined;
-
+		let topItem: { item: FocusItem; groupLabel: string } | undefined;
 		const groupedItems = groupAndSortFocusItems(categorizedItems);
 		if (!groupedItems?.size) {
 			statusBarFocus.tooltip = 'You are all caught up!';
 		} else {
 			statusBarFocus.tooltip = new MarkdownString('', true);
 			statusBarFocus.tooltip.supportHtml = true;
+			statusBarFocus.tooltip.isTrusted = true;
 
 			for (const group of focusGroups) {
 				const items = groupedItems.get(group);
@@ -124,9 +124,14 @@ export class FocusIndicator implements Disposable {
 									items.length,
 								)} that can be merged.`,
 							);
-
+							statusBarFocus.tooltip.appendMarkdown('\n');
+							statusBarFocus.tooltip.appendMarkdown(
+								`<span>[Show all mergeable](command:gitlens.quickFocus?${encodeURIComponent(
+									JSON.stringify({ state: { initialGroup: 'mergeable' } }),
+								)})</span>`,
+							);
 							color = '#00FF00';
-							topItem ??= items[0];
+							topItem ??= { item: items[0], groupLabel: 'can be merged' };
 							break;
 						case 'blocked': {
 							const action = groupByMap(items, i =>
@@ -136,56 +141,72 @@ export class FocusIndicator implements Disposable {
 									? i.actionableCategory
 									: 'blocked',
 							);
+							let item: FocusItem | undefined;
 
 							let actionGroupItems = action.get('failed-checks');
 							if (actionGroupItems?.length) {
-								const message =
-									actionGroupItems.length === 1
-										? `You have a pull request that has failed CI checks.`
-										: `You have ${actionGroupItems.length} pull requests that have failed CI checks.`;
+								const message = `You have ${pluralize('pull request', actionGroupItems.length)} that ${
+									actionGroupItems.length > 1 ? 'have' : 'has'
+								} failed CI checks.`;
 								statusBarFocus.tooltip.appendMarkdown(
 									`<span style="color:#FF0000;">$(circle-filled)</span> ${message}`,
 								);
+								item ??= actionGroupItems[0];
 							}
 
 							actionGroupItems = action.get('mergeable-conflicts');
 							if (actionGroupItems?.length) {
-								const message =
-									actionGroupItems.length === 1
-										? `You have a pull request that can be merged once conflicts are resolved.`
-										: `You have ${actionGroupItems.length} pull requests that can be merged once conflicts are resolved.`;
-
+								const message = `You have ${pluralize(
+									'pull request',
+									actionGroupItems.length,
+								)} that can be merged once conflicts are resolved.`;
 								statusBarFocus.tooltip.appendMarkdown(
 									`<span style="color:#FF0000;">$(circle-filled)</span> ${message}`,
 								);
+								item ??= actionGroupItems[0];
 							}
 
 							actionGroupItems = action.get('conflicts');
 							if (actionGroupItems?.length) {
-								const message =
-									actionGroupItems.length === 1
-										? `You have a pull request that has conflicts.`
-										: `You have ${actionGroupItems.length} pull requests that have conflicts.`;
-
+								const message = `You have ${pluralize('pull request', actionGroupItems.length)} that ${
+									actionGroupItems.length > 1 ? 'have' : 'has'
+								} conflicts.`;
 								statusBarFocus.tooltip.appendMarkdown(
 									`<span style="color:#FF0000;">$(circle-filled)</span> ${message}`,
 								);
+								item ??= actionGroupItems[0];
 							}
 
 							actionGroupItems = action.get('blocked');
 							if (actionGroupItems?.length) {
-								const message =
-									actionGroupItems.length === 1
-										? `You have a pull request that needs attention.`
-										: `You have ${actionGroupItems.length} pull requests that need attention.`;
-
+								const message = `You have ${pluralize('pull request', actionGroupItems.length)} that ${
+									actionGroupItems.length > 1 ? 'need' : 'needs'
+								} attention.`;
 								statusBarFocus.tooltip.appendMarkdown(
 									`<span style="color:#FF0000;">$(circle-filled)</span> ${message}`,
 								);
+								item ??= actionGroupItems[0];
 							}
 
 							color ??= '#FF0000';
-							topItem ??= items[0];
+							if (item != null) {
+								statusBarFocus.tooltip.appendMarkdown('\n');
+								statusBarFocus.tooltip.appendMarkdown(
+									`<span>[Show all blocked](command:gitlens.quickFocus?${encodeURIComponent(
+										JSON.stringify({ state: { initialGroup: 'blocked' } }),
+									)})</span>`,
+								);
+								let label = 'is blocked';
+								if (item.actionableCategory === 'failed-checks') {
+									label = 'failed CI checks';
+								} else if (
+									item.actionableCategory === 'mergeable-conflicts' ||
+									item.actionableCategory === 'conflicts'
+								) {
+									label = 'has conflicts';
+								}
+								topItem ??= { item: item, groupLabel: label };
+							}
 							break;
 						}
 						case 'needs-review':
@@ -193,27 +214,41 @@ export class FocusIndicator implements Disposable {
 								`<span style="color:#FFFF00;">$(circle-filled)</span> You have ${pluralize(
 									'pull request',
 									items.length,
-								)} that are waiting for your review.`,
+								)} that ${items.length > 1 ? 'are' : 'is'} waiting for your review.`,
 							);
-
+							statusBarFocus.tooltip.appendMarkdown('\n');
+							statusBarFocus.tooltip.appendMarkdown(
+								`<span>[Show all waiting for review](command:gitlens.quickFocus?${encodeURIComponent(
+									JSON.stringify({ state: { initialGroup: 'needs-review' } }),
+								)})</span>`,
+							);
 							color ??= '#FFFF00';
+							topItem ??= { item: items[0], groupLabel: 'needs your review' };
 							break;
 						case 'follow-up':
 							statusBarFocus.tooltip.appendMarkdown(
 								`<span style="color:#FFA500;">$(circle-filled)</span> You have ${pluralize(
 									'pull request',
 									items.length,
-								)} to that have been reviewed but require changes.`,
+								)} that ${items.length > 1 ? 'have' : 'has'} been reviewed and ${
+									items.length > 1 ? 'require' : 'requires'
+								} follow-up.`,
 							);
-
+							statusBarFocus.tooltip.appendMarkdown('\n');
+							statusBarFocus.tooltip.appendMarkdown(
+								`<span>[Show all requiring follow-up](command:gitlens.quickFocus?${encodeURIComponent(
+									JSON.stringify({ state: { initialGroup: 'follow-up' } }),
+								)})</span>`,
+							);
 							color ??= '#FFA500';
+							topItem ??= { item: items[0], groupLabel: 'requires follow-up' };
 							break;
 					}
 				}
 			}
 		}
 
-		statusBarFocus.text = topItem ? `$(target) #${topItem.id}` : '$(target)';
+		statusBarFocus.text = topItem ? `$(target) #${topItem.item.id} ${topItem.groupLabel}` : '$(target)';
 		statusBarFocus.color = color;
 	}
 }

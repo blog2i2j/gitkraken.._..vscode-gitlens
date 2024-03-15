@@ -217,7 +217,7 @@ export class GitCommandsCommand extends Command {
 				};
 				break;
 			case Commands.QuickFocus:
-				args = { command: 'focus' };
+				args = { command: 'focus', ...args };
 				break;
 		}
 

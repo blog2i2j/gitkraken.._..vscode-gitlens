@@ -65,6 +65,7 @@ interface Context {
 interface State {
 	item?: FocusItem;
 	action?: FocusAction;
+	initialGroup?: FocusGroup;
 }
 
 export interface FocusCommandArgs {
@@ -101,10 +102,18 @@ export class FocusCommand extends QuickCommand<State> {
 			await this.container.git.isDiscoveringRepositories;
 		}
 
+		const collapsed = new Map<FocusGroup, boolean>([['snoozed', true]]);
+		if (state.initialGroup != null) {
+			// set all to true except the initial group
+			for (const [group] of groupMap) {
+				collapsed.set(group, group !== state.initialGroup);
+			}
+		}
+
 		const context: Context = {
 			items: await this.container.focus.getCategorizedItems(),
 			title: this.title,
-			collapsed: new Map<FocusGroup, boolean>([['snoozed', true]]),
+			collapsed: collapsed,
 		};
 
 		while (this.canStepsContinue(state)) {
@@ -227,7 +236,7 @@ export class FocusCommand extends QuickCommand<State> {
 								label: i.title,
 								// description: `${i.repoAndOwner}#${i.id}, by @${i.author}`,
 								description: `#${i.id}`,
-								detail: `${actionGroupMap.get(i.actionableCategory)![0]} \u2022  ${fromNow(
+								detail: `      ${actionGroupMap.get(i.actionableCategory)![0]} \u2022  ${fromNow(
 									i.date,
 								)} by @${i.author} \u2022 ${i.repoAndOwner}`,
 
