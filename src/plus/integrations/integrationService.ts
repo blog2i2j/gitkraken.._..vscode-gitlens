@@ -11,8 +11,8 @@ import type { Source } from '../../constants.telemetry';
 import { sourceToContext } from '../../constants.telemetry';
 import type { Container } from '../../container';
 import type { Account } from '../../git/models/author';
-import type { SearchedIssue } from '../../git/models/issue';
-import type { SearchedPullRequest } from '../../git/models/pullRequest';
+import type { IssueShape } from '../../git/models/issue';
+import type { PullRequest } from '../../git/models/pullRequest';
 import type { GitRemote } from '../../git/models/remote';
 import type { RemoteProvider, RemoteProviderId } from '../../git/remotes/remoteProvider';
 import { configuration } from '../../system/-webview/configuration';
@@ -201,20 +201,12 @@ export class IntegrationService implements Disposable {
 
 		try {
 			const exchangeToken = await this.container.accountAuthentication.getExchangeToken();
-			if (
-				!(await openUrl(
-					this.container
-						.getGkDevUri('settings/integrations', `source=gitlens&token=${exchangeToken}`)
-						.toString(true),
-				))
-			) {
+			if (!(await openUrl(this.container.urls.getGkDevUrl('settings/integrations', `token=${exchangeToken}`)))) {
 				return;
 			}
 		} catch (ex) {
 			Logger.error(ex, scope);
-			if (
-				!(await openUrl(this.container.getGkDevUri('settings/integrations', 'source=gitlens').toString(true)))
-			) {
+			if (!(await openUrl(this.container.urls.getGkDevUrl('settings/integrations')))) {
 				return;
 			}
 		}
@@ -322,12 +314,12 @@ export class IntegrationService implements Disposable {
 				query += `&redirect_uri=${encodeURIComponent(callbackUri.toString(true))}`;
 			}
 
-			if (!(await openUrl(this.container.getGkDevUri('connect', query).toString(true)))) {
+			if (!(await openUrl(this.container.urls.getGkDevUrl('connect', query)))) {
 				return false;
 			}
 		} catch (ex) {
 			Logger.error(ex, scope);
-			if (!(await openUrl(this.container.getGkDevUri('connect', baseQuery).toString(true)))) {
+			if (!(await openUrl(this.container.urls.getGkDevUrl('connect', baseQuery)))) {
 				return false;
 			}
 		}
@@ -726,7 +718,7 @@ export class IntegrationService implements Disposable {
 			| SupportedSelfHostedIntegrationIds
 		)[],
 		options?: { openRepositoriesOnly?: boolean; cancellation?: CancellationToken },
-	): Promise<SearchedIssue[] | undefined> {
+	): Promise<IssueShape[] | undefined> {
 		const integrations: Map<Integration, ResourceDescriptor[] | undefined> = new Map();
 		const hostingIntegrationIds = integrationIds?.filter(
 			id => id in HostingIntegrationId || id in SelfHostedIntegrationId,
@@ -796,8 +788,8 @@ export class IntegrationService implements Disposable {
 	private async getMyIssuesCore(
 		integrations: Map<Integration, ResourceDescriptor[] | undefined>,
 		cancellation?: CancellationToken,
-	): Promise<SearchedIssue[] | undefined> {
-		const promises: Promise<SearchedIssue[] | undefined>[] = [];
+	): Promise<IssueShape[] | undefined> {
+		const promises: Promise<IssueShape[] | undefined>[] = [];
 		for (const [integration, repos] of integrations) {
 			if (integration == null) continue;
 
@@ -808,12 +800,12 @@ export class IntegrationService implements Disposable {
 		return [...flatten(filterMap(results, r => (r.status === 'fulfilled' ? r.value : undefined)))];
 	}
 
-	async getMyIssuesForRemotes(remote: GitRemote): Promise<SearchedIssue[] | undefined>;
-	async getMyIssuesForRemotes(remotes: GitRemote[]): Promise<SearchedIssue[] | undefined>;
+	async getMyIssuesForRemotes(remote: GitRemote): Promise<IssueShape[] | undefined>;
+	async getMyIssuesForRemotes(remotes: GitRemote[]): Promise<IssueShape[] | undefined>;
 	@debug<IntegrationService['getMyIssuesForRemotes']>({
 		args: { 0: (r: GitRemote | GitRemote[]) => (Array.isArray(r) ? r.map(rp => rp.name) : r.name) },
 	})
-	async getMyIssuesForRemotes(remoteOrRemotes: GitRemote | GitRemote[]): Promise<SearchedIssue[] | undefined> {
+	async getMyIssuesForRemotes(remoteOrRemotes: GitRemote | GitRemote[]): Promise<IssueShape[] | undefined> {
 		if (!Array.isArray(remoteOrRemotes)) {
 			remoteOrRemotes = [remoteOrRemotes];
 		}
@@ -874,7 +866,7 @@ export class IntegrationService implements Disposable {
 		integrationIds?: (HostingIntegrationId | CloudSelfHostedIntegrationId)[],
 		cancellation?: CancellationToken,
 		silent?: boolean,
-	): Promise<IntegrationResult<SearchedPullRequest[] | undefined>> {
+	): Promise<IntegrationResult<PullRequest[] | undefined>> {
 		const integrations: Map<HostingIntegration, ResourceDescriptor[] | undefined> = new Map();
 		for (const integrationId of integrationIds?.length ? integrationIds : Object.values(HostingIntegrationId)) {
 			let integration;
@@ -894,10 +886,10 @@ export class IntegrationService implements Disposable {
 		integrations: Map<HostingIntegration, ResourceDescriptor[] | undefined>,
 		cancellation?: CancellationToken,
 		silent?: boolean,
-	): Promise<IntegrationResult<SearchedPullRequest[] | undefined>> {
+	): Promise<IntegrationResult<PullRequest[] | undefined>> {
 		const start = Date.now();
 
-		const promises: Promise<IntegrationResult<SearchedPullRequest[] | undefined>>[] = [];
+		const promises: Promise<IntegrationResult<PullRequest[] | undefined>>[] = [];
 		for (const [integration, repos] of integrations) {
 			if (integration == null) continue;
 
@@ -932,16 +924,14 @@ export class IntegrationService implements Disposable {
 		};
 	}
 
-	async getMyPullRequestsForRemotes(remote: GitRemote): Promise<IntegrationResult<SearchedPullRequest[] | undefined>>;
-	async getMyPullRequestsForRemotes(
-		remotes: GitRemote[],
-	): Promise<IntegrationResult<SearchedPullRequest[] | undefined>>;
+	async getMyPullRequestsForRemotes(remote: GitRemote): Promise<IntegrationResult<PullRequest[] | undefined>>;
+	async getMyPullRequestsForRemotes(remotes: GitRemote[]): Promise<IntegrationResult<PullRequest[] | undefined>>;
 	@debug<IntegrationService['getMyPullRequestsForRemotes']>({
 		args: { 0: (r: GitRemote | GitRemote[]) => (Array.isArray(r) ? r.map(rp => rp.name) : r.name) },
 	})
 	async getMyPullRequestsForRemotes(
 		remoteOrRemotes: GitRemote | GitRemote[],
-	): Promise<IntegrationResult<SearchedPullRequest[] | undefined>> {
+	): Promise<IntegrationResult<PullRequest[] | undefined>> {
 		if (!Array.isArray(remoteOrRemotes)) {
 			remoteOrRemotes = [remoteOrRemotes];
 		}

@@ -9,6 +9,22 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Added
 
 - Adds AI model status and model switcher to the _Home_ view ([#4064](https://github.com/gitkraken/vscode-gitlens/issues/4064))
+- Adds Anthropic Claude 3.7 Sonnet model for GitLens' AI features ([#4101](https://github.com/gitkraken/vscode-gitlens/issues/4101))
+- Adds Google Gemini 2.0 Flash-Lite model for GitLens' AI features ([#4104](https://github.com/gitkraken/vscode-gitlens/issues/4104))
+- Adds integration with Bitbucket Cloud by showing enriched links to PRs and issues [#4045](https://github.com/gitkraken/vscode-gitlens/issues/4045)
+
+### Changed
+
+- Curated the list of AI models available for GitLens' AI features
+
+### Fixed
+
+- Fixes avoid eagerly getting "full" commit details for inline blame ([#4115])(https://github.com/gitkraken/vscode-gitlens/issues/4115))
+- Fixes large commit messages work poorly on Commit Graph ([#4100](https://github.com/gitkraken/vscode-gitlens/issues/4100))
+
+## [16.3.2] - 2025-02-21
+
+## [16.3.1] - 2025-02-20
 
 ### Fixed
 
@@ -17,6 +33,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Fixes regression where hovering over the Graph WIP row doesn't show up anymore ([#4062](https://github.com/gitkraken/vscode-gitlens/issues/4062))
 - Fixes Inspect & Graph Details: autolinks rendering when enabled setting is false ([#3841](https://github.com/gitkraken/vscode-gitlens/issues/3841))
 - Fixes comparison with Merge Target on Home fails to open a valid comparison ([#4060](https://github.com/gitkraken/vscode-gitlens/issues/4060))
+- Fixes closing the walkthrough on Home from opening the walkthrough ([#4050](https://github.com/gitkraken/vscode-gitlens/issues/4050))
+- Fixes horizontal scrollbar from showing up on the old Home view ([#4051](https://github.com/gitkraken/vscode-gitlens/issues/4051))
+- Fixes a failure when copying changes to a worktree ([#4049](https://github.com/gitkraken/vscode-gitlens/issues/4049))
 
 ## [16.3.0] - 2025-02-11
 
@@ -5987,7 +6006,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - Initial release but still heavily a work in progress.
 
-[unreleased]: https://github.com/gitkraken/vscode-gitlens/compare/v16.3.0...HEAD
+[unreleased]: https://github.com/gitkraken/vscode-gitlens/compare/v16.3.2...HEAD
+[16.3.2]: https://github.com/gitkraken/vscode-gitlens/compare/v16.3.1...gitkraken:v16.3.2
+[16.3.1]: https://github.com/gitkraken/vscode-gitlens/compare/v16.3.0...gitkraken:v16.3.1
 [16.3.0]: https://github.com/gitkraken/vscode-gitlens/compare/v16.2.1...gitkraken:v16.3.0
 [16.2.1]: https://github.com/gitkraken/vscode-gitlens/compare/v16.2.0...gitkraken:v16.2.1
 [16.2.0]: https://github.com/gitkraken/vscode-gitlens/compare/v16.1.1...gitkraken:v16.2.0

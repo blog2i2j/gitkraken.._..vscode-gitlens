@@ -2,8 +2,8 @@ import type { GraphRow } from '@gitkraken/gitkraken-components';
 import { css, html } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 import { until } from 'lit/directives/until.js';
-import type { Deferrable } from '../../../../../system/function';
-import { debounce } from '../../../../../system/function';
+import type { Deferrable } from '../../../../../system/function/debounce';
+import { debounce } from '../../../../../system/function/debounce';
 import { getSettledValue, isPromise } from '../../../../../system/promise';
 import type { DidGetRowHoverParams } from '../../../../plus/graph/protocol';
 import { GlElement } from '../../../shared/components/element';
@@ -28,7 +28,15 @@ type Anchor = string | HTMLElement | { getBoundingClientRect: () => Omit<DOMRect
 
 @customElement('gl-graph-hover')
 export class GlGraphHover extends GlElement {
-	static override styles = css``;
+	static override styles = css`
+		gl-popover::part(body) {
+			--max-width: min(92vw, 45rem);
+			max-height: 50vh;
+			width: clamp(min(30rem, 92vw), min-content, max-content);
+			overflow-x: hidden;
+			overflow-y: auto;
+		}
+	`;
 
 	@property({ type: Object })
 	anchor?: Anchor;

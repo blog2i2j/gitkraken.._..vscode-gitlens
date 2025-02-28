@@ -13333,7 +13333,7 @@
 				},
 				{
 					"command": "gitlens.views.openChangedFileDiffsIndividually",
-					"when": "config.gitlens.views.openChangesInMultiDiffEditor && config.multiDiffEditor.experimental.enabled",
+					"when": "config.gitlens.views.openChangesInMultiDiffEditor",
 					"group": "1_gitlens@2"
 				},
 				{
@@ -13342,7 +13342,7 @@
 				},
 				{
 					"command": "gitlens.views.openChangedFileDiffsWithWorkingIndividually",
-					"when": "config.gitlens.views.openChangesInMultiDiffEditor && config.multiDiffEditor.experimental.enabled",
+					"when": "config.gitlens.views.openChangesInMultiDiffEditor",
 					"group": "1_gitlens@4"
 				},
 				{
@@ -13866,7 +13866,7 @@
 				},
 				{
 					"command": "gitlens.graph.openChangedFileDiffsIndividually",
-					"when": "config.gitlens.views.openChangesInMultiDiffEditor && config.multiDiffEditor.experimental.enabled",
+					"when": "config.gitlens.views.openChangesInMultiDiffEditor",
 					"group": "1_gitlens@2"
 				},
 				{
@@ -13876,7 +13876,7 @@
 				},
 				{
 					"command": "gitlens.graph.openChangedFileDiffsWithWorkingIndividually",
-					"when": "config.gitlens.views.openChangesInMultiDiffEditor && config.multiDiffEditor.experimental.enabled",
+					"when": "config.gitlens.views.openChangesInMultiDiffEditor",
 					"group": "1_gitlens@4"
 				},
 				{
@@ -15688,7 +15688,7 @@
 				},
 				{
 					"command": "gitlens.views.openChangedFileDiffs",
-					"when": "viewItem =~ /gitlens:(compare:results(?!:)\\b(?!.*?\\b\\+filtered\\b)|commit|stash|results:files|status-branch:files|status:upstream:(ahead|behind))\\b/ && config.gitlens.views.openChangesInMultiDiffEditor && config.multiDiffEditor.experimental.enabled && !listMultiSelection",
+					"when": "viewItem =~ /gitlens:(compare:results(?!:)\\b(?!.*?\\b\\+filtered\\b)|commit|stash|results:files|status-branch:files|status:upstream:(ahead|behind))\\b/ && config.gitlens.views.openChangesInMultiDiffEditor && !listMultiSelection",
 					"group": "inline@90",
 					"alt": "gitlens.views.openChangedFileDiffsWithWorking"
 				},
@@ -16212,7 +16212,7 @@
 				},
 				{
 					"command": "gitlens.copyPatchToClipboard",
-					"when": "viewItem =~ /gitlens:file(\\b(?=.*?\\b\\+committed\\b)|:results)/ && !listMultiSelection && !gitlens:hasVirtualFolders && !gitlens:untrusted",
+					"when": "viewItem =~ /gitlens:file(\\b(?=.*?\\b\\+committed\\b)|:results)/ && !gitlens:hasVirtualFolders && !gitlens:untrusted",
 					"group": "7_gitlens_cutcopypaste@3"
 				},
 				{
@@ -16273,7 +16273,7 @@
 				},
 				{
 					"command": "gitlens.views.openPullRequestChanges",
-					"when": "viewItem =~ /gitlens:(pullrequest\\b(?=.*?\\b\\+refs\\b)|launchpad:item\\b(?=.*?\\b\\+pr\\b))/ && config.multiDiffEditor.experimental.enabled",
+					"when": "viewItem =~ /gitlens:(pullrequest\\b(?=.*?\\b\\+refs\\b)|launchpad:item\\b(?=.*?\\b\\+pr\\b))/",
 					"group": "inline@2"
 				},
 				{
@@ -16294,7 +16294,7 @@
 				},
 				{
 					"command": "gitlens.views.openPullRequestChanges",
-					"when": "viewItem =~ /gitlens:(pullrequest\\b(?=.*?\\b\\+refs\\b)|launchpad:item\\b(?=.*?\\b\\+pr\\b))/ && config.multiDiffEditor.experimental.enabled && !listMultiSelection",
+					"when": "viewItem =~ /gitlens:(pullrequest\\b(?=.*?\\b\\+refs\\b)|launchpad:item\\b(?=.*?\\b\\+pr\\b))/ && !listMultiSelection",
 					"group": "2_gitlens_quickopen@1"
 				},
 				{
@@ -18802,7 +18802,7 @@
 				},
 				{
 					"command": "gitlens.graph.openPullRequestChanges",
-					"when": "webviewItem =~ /gitlens:pullrequest\\b(?=.*?\\b\\+refs\\b)/ && config.multiDiffEditor.experimental.enabled",
+					"when": "webviewItem =~ /gitlens:pullrequest\\b(?=.*?\\b\\+refs\\b)/",
 					"group": "1_gitlens_actions@1"
 				},
 				{
@@ -20153,7 +20153,7 @@
 		"build:extension:browser": "webpack --mode development --config-name extension:webworker",
 		"build:webviews": "webpack --mode development --config-name webviews",
 		"build:icons": "pnpm run icons:svgo && pnpm fantasticon && pnpm run icons:apply && pnpm run icons:export",
-		"build:tests": "node ./scripts/esbuild.tests.mjs --mode development",
+		"build:tests": "node ./scripts/esbuild.tests.mjs",
 		"// Extracts the contributions from package.json into contributions.json": "//",
 		"extract:contributions": "node --experimental-strip-types ./scripts/generateContributions.mts --extract",
 		"// Generates contributions in contributions.json into package.json": "//",
@@ -20242,20 +20242,20 @@
 	},
 	"devDependencies": {
 		"@eamodio/eslint-lite-webpack-plugin": "0.2.0",
-		"@eslint/js": "9.20.0",
+		"@eslint/js": "9.21.0",
 		"@playwright/test": "1.50.1",
-		"@swc/core": "1.10.4",
+		"@swc/core": "1.11.4",
 		"@twbs/fantasticon": "3.0.0",
-		"@types/eslint__js": "8.42.3",
 		"@types/mocha": "10.0.10",
 		"@types/node": "20.14.15",
 		"@types/react": "17.0.83",
 		"@types/react-dom": "17.0.25",
+		"@types/sinon": "17.0.4",
 		"@types/slug": "5.0.9",
 		"@types/sortablejs": "1.15.8",
 		"@types/vscode": "1.92.0",
-		"@typescript-eslint/parser": "8.24.1",
-		"@vscode/test-cli": "^0.0.10",
+		"@typescript-eslint/parser": "8.25.0",
+		"@vscode/test-cli": "0.0.10",
 		"@vscode/test-electron": "2.4.1",
 		"@vscode/test-web": "0.0.66",
 		"@vscode/vsce": "3.2.2",
@@ -20271,35 +20271,35 @@
 		"esbuild-loader": "4.3.0",
 		"esbuild-node-externals": "1.18.0",
 		"esbuild-sass-plugin": "3.3.1",
-		"eslint": "9.20.1",
+		"eslint": "9.21.0",
 		"eslint-import-resolver-oxc": "0.12.0",
 		"eslint-plugin-anti-trojan-source": "1.1.1",
 		"eslint-plugin-import-x": "4.6.1",
 		"eslint-plugin-lit": "1.15.0",
-		"eslint-plugin-wc": "2.2.0",
+		"eslint-plugin-wc": "2.2.1",
 		"fork-ts-checker-webpack-plugin": "9.0.2",
 		"glob": "11.0.1",
-		"globals": "15.15.0",
+		"globals": "16.0.0",
 		"html-loader": "5.1.0",
 		"html-webpack-plugin": "5.6.3",
 		"image-minimizer-webpack-plugin": "4.1.3",
 		"license-checker-rseidelsohn": "4.4.2",
 		"lz-string": "1.5.0",
 		"mini-css-extract-plugin": "2.9.2",
-		"mocha": "10.8.2",
 		"ovsx": "0.10.1",
 		"playwright": "1.50.1",
 		"prettier": "3.1.0",
 		"regex-to-strings": "2.1.0",
-		"sass": "1.85.0",
+		"sass": "1.85.1",
 		"sass-loader": "16.0.5",
 		"schema-utils": "4.3.0",
 		"sharp": "0.33.5",
+		"sinon": "19.0.2",
 		"svgo": "3.3.2",
-		"terser-webpack-plugin": "5.3.11",
+		"terser-webpack-plugin": "5.3.12",
 		"ts-loader": "9.5.2",
 		"typescript": "5.8.1-rc",
-		"typescript-eslint": "8.24.1",
+		"typescript-eslint": "8.25.0",
 		"webpack": "5.98.0",
 		"webpack-bundle-analyzer": "4.10.2",
 		"webpack-cli": "6.0.1",
@@ -20312,5 +20312,5 @@
 		"node-fetch": "2.7.0",
 		"semver-regex": "4.0.5"
 	},
-	"packageManager": "pnpm@10.4.1"
+	"packageManager": "pnpm@10.5.2"
 }

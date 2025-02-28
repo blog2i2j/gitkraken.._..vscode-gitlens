@@ -97,7 +97,7 @@ export class StatusGitSubProvider implements GitStatusSubProvider {
 				switch (operation) {
 					case 'cherry-pick': {
 						const cherryPickHead = (
-							await this.git.exec<string>(
+							await this.git.exec(
 								{ cwd: repoPath, errors: GitErrorHandling.Ignore },
 								'rev-parse',
 								'--quiet',
@@ -120,7 +120,7 @@ export class StatusGitSubProvider implements GitStatusSubProvider {
 					}
 					case 'merge': {
 						const mergeHead = (
-							await this.git.exec<string>(
+							await this.git.exec(
 								{ cwd: repoPath, errors: GitErrorHandling.Ignore },
 								'rev-parse',
 								'--quiet',
@@ -161,7 +161,7 @@ export class StatusGitSubProvider implements GitStatusSubProvider {
 					}
 					case 'revert': {
 						const revertHead = (
-							await this.git.exec<string>(
+							await this.git.exec(
 								{ cwd: repoPath, errors: GitErrorHandling.Ignore },
 								'rev-parse',
 								'--quiet',
@@ -194,7 +194,7 @@ export class StatusGitSubProvider implements GitStatusSubProvider {
 							stepsTotalResult,
 							stepsMessageResult,
 						] = await Promise.allSettled([
-							this.git.exec<string>(
+							this.git.exec(
 								{ cwd: repoPath, errors: GitErrorHandling.Ignore },
 								'rev-parse',
 								'--quiet',
@@ -494,13 +494,13 @@ export class StatusGitSubProvider implements GitStatusSubProvider {
 	@gate()
 	@log()
 	async getStatusForFile(repoPath: string, pathOrUri: string | Uri): Promise<GitStatusFile | undefined> {
-		const files = await this.getStatusForFiles(repoPath, pathOrUri);
+		const files = await this.getStatusForPath(repoPath, pathOrUri);
 		return files?.[0];
 	}
 
 	@gate()
 	@log()
-	async getStatusForFiles(repoPath: string, pathOrGlob: string | Uri): Promise<GitStatusFile[] | undefined> {
+	async getStatusForPath(repoPath: string, pathOrGlob: string | Uri): Promise<GitStatusFile[] | undefined> {
 		const [relativePath] = splitPath(pathOrGlob, repoPath);
 
 		const porcelainVersion = (await this.git.isAtLeastVersion('2.11')) ? 2 : 1;

@@ -56,8 +56,9 @@ import { createFromDateDelta, fromNow } from '../../system/date';
 import { gate } from '../../system/decorators/-webview/gate';
 import { debug, log } from '../../system/decorators/log';
 import { take } from '../../system/event';
-import type { Deferrable } from '../../system/function';
-import { debounce, once } from '../../system/function';
+import { once } from '../../system/function';
+import type { Deferrable } from '../../system/function/debounce';
+import { debounce } from '../../system/function/debounce';
 import { Logger } from '../../system/logger';
 import { getLogScope, setLogScopeExit } from '../../system/logger.scope';
 import { flatten } from '../../system/object';
@@ -635,10 +636,10 @@ export class SubscriptionService implements Disposable {
 
 		try {
 			const exchangeToken = await this.container.accountAuthentication.getExchangeToken();
-			await openUrl(this.container.getGkDevUri('account', `token=${exchangeToken}`).toString(true));
+			await openUrl(this.container.urls.getGkDevUrl('account', `token=${exchangeToken}`));
 		} catch (ex) {
 			Logger.error(ex, scope);
-			await openUrl(this.container.getGkDevUri('account').toString(true));
+			await openUrl(this.container.urls.getGkDevUrl('account'));
 		}
 	}
 
@@ -950,7 +951,7 @@ export class SubscriptionService implements Disposable {
 			Logger.error(ex, scope);
 		}
 
-		aborted = !(await openUrl(this.container.getGkDevUri('purchase/checkout', query.toString()).toString(true)));
+		aborted = !(await openUrl(this.container.urls.getGkDevUrl('purchase/checkout', query)));
 
 		if (aborted) {
 			return;

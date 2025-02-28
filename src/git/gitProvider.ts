@@ -168,10 +168,6 @@ export interface GitRepositoryProvider {
 	reset?(repoPath: string, ref: string, options?: { hard?: boolean } | { soft?: boolean }): Promise<void>;
 
 	getLastFetchedTimestamp(repoPath: string): Promise<number | undefined>;
-	getRevisionContent(repoPath: string, path: string, ref: string): Promise<Uint8Array | undefined>;
-	getTreeEntryForRevision(repoPath: string, path: string, ref: string): Promise<GitTreeEntry | undefined>;
-	getTreeForRevision(repoPath: string, ref: string): Promise<GitTreeEntry[]>;
-
 	runGitCommandViaTerminal?(
 		repoPath: string,
 		command: string,
@@ -188,6 +184,7 @@ export interface GitRepositoryProvider {
 	patch?: GitPatchSubProvider;
 	refs: GitRefsSubProvider;
 	remotes: GitRemotesSubProvider;
+	revision: GitRevisionSubProvider;
 	staging?: GitStagingSubProvider;
 	stash?: GitStashSubProvider;
 	status: GitStatusSubProvider;
@@ -361,15 +358,17 @@ export interface GitContributorsSubProvider {
 }
 
 export interface GitDiffSubProvider {
-	getChangedFilesCount(repoPath: string, ref?: string): Promise<GitDiffShortStat | undefined>;
+	getChangedFilesCount(
+		repoPath: string,
+		to?: string,
+		from?: string,
+		options?: { uris?: Uri[] },
+	): Promise<GitDiffShortStat | undefined>;
 	getDiff?(
 		repoPath: string | Uri,
 		to: string,
 		from?: string,
-		options?:
-			| { context?: number; includeUntracked?: never; uris?: never }
-			| { context?: number; includeUntracked?: never; uris: Uri[] }
-			| { context?: number; includeUntracked: boolean; uris?: never },
+		options?: { context?: number; includeUntracked?: boolean; uris?: Uri[] },
 	): Promise<GitDiff | undefined>;
 	getDiffFiles?(repoPath: string | Uri, contents: string): Promise<GitDiffFiles | undefined>;
 	getDiffStatus(
@@ -522,6 +521,12 @@ export interface GitRemotesSubProvider {
 	setRemoteAsDefault(repoPath: string, name: string, value?: boolean): Promise<void>;
 }
 
+export interface GitRevisionSubProvider {
+	getRevisionContent(repoPath: string, rev: string, path: string): Promise<Uint8Array | undefined>;
+	getTreeEntryForRevision(repoPath: string, rev: string, path: string): Promise<GitTreeEntry | undefined>;
+	getTreeForRevision(repoPath: string, rev: string): Promise<GitTreeEntry[]>;
+}
+
 export interface DisposableTemporaryGitIndex extends UnifiedAsyncDisposable {
 	path: string;
 	env: { GIT_INDEX_FILE: string };
@@ -559,7 +564,7 @@ export interface GitStashSubProvider {
 export interface GitStatusSubProvider {
 	getStatus(repoPath: string | undefined): Promise<GitStatus | undefined>;
 	getStatusForFile?(repoPath: string, uri: Uri): Promise<GitStatusFile | undefined>;
-	getStatusForFiles?(repoPath: string, pathOrGlob: Uri): Promise<GitStatusFile[] | undefined>;
+	getStatusForPath?(repoPath: string, pathOrGlob: Uri): Promise<GitStatusFile[] | undefined>;
 
 	getPausedOperationStatus?(repoPath: string): Promise<GitPausedOperationStatus | undefined>;
 	abortPausedOperation?(repoPath: string, options?: { quit?: boolean }): Promise<void>;
@@ -616,6 +621,7 @@ export type GitSubProvider =
 	| GitPatchSubProvider
 	| GitRefsSubProvider
 	| GitRemotesSubProvider
+	| GitRevisionSubProvider
 	| GitStagingSubProvider
 	| GitStashSubProvider
 	| GitStatusSubProvider
