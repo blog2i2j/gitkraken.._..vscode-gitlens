@@ -1,5 +1,5 @@
 import type { ConfigurationChangeEvent, Disposable, Event, ExtensionContext } from 'vscode';
-import { EventEmitter, ExtensionMode, Uri } from 'vscode';
+import { EventEmitter, ExtensionMode } from 'vscode';
 import {
 	getSharedGKStorageLocationProvider,
 	getSupportedGitProviders,
@@ -30,12 +30,14 @@ import { OrganizationService } from './plus/gk/organizationService';
 import { ProductConfigProvider } from './plus/gk/productConfigProvider';
 import { ServerConnection } from './plus/gk/serverConnection';
 import { SubscriptionService } from './plus/gk/subscriptionService';
+import { UrlsProvider } from './plus/gk/urlsProvider';
 import { GraphStatusBarController } from './plus/graph/statusbar';
 import type { CloudIntegrationService } from './plus/integrations/authentication/cloudIntegrationService';
 import { ConfiguredIntegrationService } from './plus/integrations/authentication/configuredIntegrationService';
 import { IntegrationAuthenticationService } from './plus/integrations/authentication/integrationAuthenticationService';
 import { IntegrationService } from './plus/integrations/integrationService';
 import type { AzureDevOpsApi } from './plus/integrations/providers/azure/azure';
+import type { BitbucketApi } from './plus/integrations/providers/bitbucket/bitbucket';
 import type { GitHubApi } from './plus/integrations/providers/github/github';
 import type { GitLabApi } from './plus/integrations/providers/gitlab/gitlab';
 import { EnrichmentService } from './plus/launchpad/enrichmentService';
@@ -192,7 +194,8 @@ export class Container {
 			configuration.onDidChangeAny(this.onAnyConfigurationChanged, this),
 		];
 
-		this._disposables.push((this._connection = new ServerConnection(this)));
+		this._urls = new UrlsProvider(this.env);
+		this._disposables.push((this._connection = new ServerConnection(this, this._urls)));
 
 		this._disposables.push(
 			(this._accountAuthentication = new AccountAuthenticationProvider(this, this._connection)),
@@ -428,7 +431,7 @@ export class Container {
 	private _enrichments: EnrichmentService | undefined;
 	get enrichments(): EnrichmentService {
 		if (this._enrichments == null) {
-			this._disposables.push((this._enrichments = new EnrichmentService(this, new ServerConnection(this))));
+			this._disposables.push((this._enrichments = new EnrichmentService(this, this._connection)));
 		}
 
 		return this._enrichments;
@@ -485,6 +488,30 @@ export class Container {
 		}
 
 		return this._azure;
+	}
+
+	private _bitbucket: Promise<BitbucketApi | undefined> | undefined;
+	get bitbucket(): Promise<BitbucketApi | undefined> {
+		if (this._bitbucket == null) {
+			async function load(this: Container) {
+				try {
+					const bitbucket = new (
+						await import(
+							/* webpackChunkName: "integrations" */ './plus/integrations/providers/bitbucket/bitbucket'
+						)
+					).BitbucketApi(this);
+					this._disposables.push(bitbucket);
+					return bitbucket;
+				} catch (ex) {
+					Logger.error(ex);
+					return undefined;
+				}
+			}
+
+			this._bitbucket = load.call(this);
+		}
+
+		return this._bitbucket;
 	}
 
 	private _github: Promise<GitHubApi | undefined> | undefined;
@@ -661,6 +688,11 @@ export class Container {
 		return this._uri;
 	}
 
+	private readonly _urls: UrlsProvider;
+	get urls(): UrlsProvider {
+		return this._urls;
+	}
+
 	private readonly _usage: UsageTracker;
 	get usage(): UsageTracker {
 		return this._usage;
@@ -801,31 +833,6 @@ export class Container {
 				};
 			},
 		});
-	}
-
-	@memoize()
-	private get baseGkDevUri(): Uri {
-		if (this.env === 'staging') {
-			return Uri.parse('https://staging.gitkraken.dev');
-		}
-
-		if (this.env === 'dev') {
-			return Uri.parse('https://dev.gitkraken.dev');
-		}
-
-		return Uri.parse('https://gitkraken.dev');
-	}
-
-	getGkDevUri(path?: string, query?: string): Uri {
-		let uri = path != null ? Uri.joinPath(this.baseGkDevUri, path) : this.baseGkDevUri;
-		if (query != null) {
-			uri = uri.with({ query: query });
-		}
-		return uri;
-	}
-
-	generateWebGkDevUrl(path?: string): string {
-		return this.getGkDevUri(path, '?source=gitlens').toString();
 	}
 }
 

@@ -31,10 +31,8 @@ import { executeGitCommand } from '../../../git/actions';
 import * as BranchActions from '../../../git/actions/branch';
 import {
 	getOrderedComparisonRefs,
-	openAllChanges,
-	openAllChangesIndividually,
-	openAllChangesWithWorking,
-	openAllChangesWithWorkingIndividually,
+	openCommitChanges,
+	openCommitChangesWithWorking,
 	openComparisonChanges,
 	openFiles,
 	openFilesAtRevision,
@@ -112,8 +110,9 @@ import type { OpenWorkspaceLocation } from '../../../system/-webview/vscode';
 import { isDarkTheme, isLightTheme, openUrl, openWorkspace } from '../../../system/-webview/vscode';
 import { gate } from '../../../system/decorators/-webview/gate';
 import { debug, log } from '../../../system/decorators/log';
-import type { Deferrable } from '../../../system/function';
-import { debounce, disposableInterval } from '../../../system/function';
+import { disposableInterval } from '../../../system/function';
+import type { Deferrable } from '../../../system/function/debounce';
+import { debounce } from '../../../system/function/debounce';
 import { count, find, last, map } from '../../../system/iterable';
 import { flatten, updateRecordValue } from '../../../system/object';
 import {
@@ -453,8 +452,7 @@ export class GraphWebviewProvider implements WebviewProvider<State, State, Graph
 			}
 
 			if (this.repository == null && this.container.git.repositoryCount > 1) {
-				const [contexts] = parseCommandContext(GlCommand.ShowGraph, undefined, ...args);
-				const context = Array.isArray(contexts) ? contexts[0] : contexts;
+				const [context] = parseCommandContext(GlCommand.ShowGraph, undefined, ...args);
 
 				if (context.type === 'scm' && context.scm.rootUri != null) {
 					this.repository = this.container.git.getRepository(context.scm.rootUri);
@@ -983,7 +981,7 @@ export class GraphWebviewProvider implements WebviewProvider<State, State, Graph
 
 	@debug({ args: false })
 	private onRepositoryFileSystemChanged(e: RepositoryFileSystemChangeEvent) {
-		if (e.repository?.path !== this.repository?.path) return;
+		if (e.repository.id !== this.repository?.id) return;
 		void this.notifyDidChangeWorkingTree();
 	}
 
@@ -1368,15 +1366,15 @@ export class GraphWebviewProvider implements WebviewProvider<State, State, Graph
 					const upstreamMetadata: GraphUpstreamMetadata = {
 						name: getBranchNameWithoutRemote(upstream.name),
 						owner: getRemoteNameFromBranchName(upstream.name),
-						ahead: branch.state.ahead,
-						behind: branch.state.behind,
+						ahead: branch.upstream?.state.ahead ?? 0,
+						behind: branch.upstream?.state.behind ?? 0,
 						context: serializeWebviewItemContext<GraphItemContext>({
 							webviewItem: 'gitlens:upstreamStatus',
 							webviewItemValue: {
 								type: 'upstreamStatus',
 								ref: getReferenceFromBranch(branch),
-								ahead: branch.state.ahead,
-								behind: branch.state.behind,
+								ahead: branch.upstream?.state.ahead ?? 0,
+								behind: branch.upstream?.state.behind ?? 0,
 							},
 						}),
 					};
@@ -2558,7 +2556,7 @@ export class GraphWebviewProvider implements WebviewProvider<State, State, Graph
 
 		const branch = getSettledValue(branchResult);
 		if (branch != null) {
-			branchState = { ...branch.state };
+			branchState = { ...(branch.upstream?.state ?? { ahead: 0, behind: 0 }) };
 
 			const worktreesByBranch = data?.worktreesByBranch ?? (await getWorktreesByBranch(this.repository));
 			branchState.worktree = worktreesByBranch?.has(branch.id) ?? false;
@@ -3842,10 +3840,7 @@ export class GraphWebviewProvider implements WebviewProvider<State, State, Graph
 		const commit = await this.getCommitFromGraphItemRef(item);
 		if (commit == null) return;
 
-		if (individually) {
-			return openAllChangesIndividually(commit);
-		}
-		return openAllChanges(commit);
+		return openCommitChanges(this.container, commit, individually);
 	}
 
 	@log()
@@ -3853,10 +3848,7 @@ export class GraphWebviewProvider implements WebviewProvider<State, State, Graph
 		const commit = await this.getCommitFromGraphItemRef(item);
 		if (commit == null) return;
 
-		if (individually) {
-			return openAllChangesWithWorkingIndividually(commit);
-		}
-		return openAllChangesWithWorking(commit);
+		return openCommitChangesWithWorking(this.container, commit, individually);
 	}
 
 	@log()

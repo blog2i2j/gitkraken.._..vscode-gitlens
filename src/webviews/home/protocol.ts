@@ -1,7 +1,8 @@
 import type { AIModel } from '../../ai/aiProviderService';
 import type { IntegrationDescriptor } from '../../constants.integrations';
 import type { GitBranchMergedStatus } from '../../git/gitProvider';
-import type { GitBranchStatus, GitTrackingState } from '../../git/models/branch';
+import type { GitBranchStatus, GitTrackingState, GitTrackingUpstream } from '../../git/models/branch';
+import type { GitDiffFileStats } from '../../git/models/diff';
 import type { Issue } from '../../git/models/issue';
 import type { MergeConflict } from '../../git/models/mergeConflict';
 import type { GitPausedOperationStatus } from '../../git/models/pausedOperationStatus';
@@ -73,17 +74,12 @@ export interface GetOverviewBranch {
 	name: string;
 	opened: boolean;
 	timestamp?: number;
-	state: GitTrackingState;
 	status: GitBranchStatus;
-	upstream: { name: string; missing: boolean } | undefined;
+	upstream: GitTrackingUpstream | undefined;
 
 	wip?: Promise<
 		| {
-				workingTreeState?: {
-					added: number;
-					changed: number;
-					deleted: number;
-				};
+				workingTreeState?: GitDiffFileStats;
 				hasConflicts?: boolean;
 				conflictsCount?: number;
 				pausedOpStatus?: GitPausedOperationStatus;

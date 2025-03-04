@@ -4,7 +4,8 @@ import { memoize } from '../../system/decorators/-webview/memoize';
 import { pluralize } from '../../system/string';
 import { formatDetachedHeadName, getRemoteNameFromBranchName, isDetachedHead } from '../utils/branch.utils';
 import { getUpstreamStatus } from '../utils/status.utils';
-import type { GitBranchStatus, GitTrackingState } from './branch';
+import type { GitBranchStatus, GitTrackingUpstream } from './branch';
+import type { GitDiffFileStats } from './diff';
 import { GitFileConflictStatus, GitFileIndexStatus, GitFileWorkingTreeStatus } from './fileStatus';
 import type { GitRemote } from './remote';
 import type { GitStatusFile } from './statusFile';
@@ -18,8 +19,7 @@ export class GitStatus {
 		public readonly branch: string,
 		public readonly sha: string,
 		public readonly files: GitStatusFile[],
-		public readonly state: GitTrackingState,
-		public readonly upstream?: { name: string; missing: boolean },
+		public readonly upstream?: GitTrackingUpstream,
 		public readonly rebasing: boolean = false,
 	) {
 		this.detached = isDetachedHead(branch);
@@ -32,9 +32,9 @@ export class GitStatus {
 		if (this.upstream == null) return this.detached ? 'detached' : 'local';
 
 		if (this.upstream.missing) return 'missingUpstream';
-		if (this.state.ahead && this.state.behind) return 'diverged';
-		if (this.state.ahead) return 'ahead';
-		if (this.state.behind) return 'behind';
+		if (this.upstream.state.ahead && this.upstream.state.behind) return 'diverged';
+		if (this.upstream.state.ahead) return 'ahead';
+		if (this.upstream.state.behind) return 'behind';
 		return 'upToDate';
 	}
 
@@ -175,7 +175,7 @@ export class GitStatus {
 	}
 
 	@memoize()
-	getDiffStatus(): { added: number; deleted: number; changed: number } {
+	getDiffStatus(): GitDiffFileStats {
 		const diff = {
 			added: 0,
 			deleted: 0,
@@ -271,7 +271,7 @@ export class GitStatus {
 		separator?: string;
 		suffix?: string;
 	}): string {
-		return getUpstreamStatus(this.upstream, this.state, options);
+		return getUpstreamStatus(this.upstream, options);
 	}
 }
 

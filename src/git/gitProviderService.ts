@@ -29,8 +29,8 @@ import { getBestPath } from '../system/-webview/path';
 import { joinUnique } from '../system/array';
 import { gate } from '../system/decorators/-webview/gate';
 import { debug, log } from '../system/decorators/log';
-import type { Deferrable } from '../system/function';
-import { debounce } from '../system/function';
+import type { Deferrable } from '../system/function/debounce';
+import { debounce } from '../system/function/debounce';
 import { count, filter, first, flatMap, groupByFilterMap, groupByMap, join, map, some, sum } from '../system/iterable';
 import { getLoggableName, Logger } from '../system/logger';
 import { getLogScope, setLogScopeExit, startLogScope } from '../system/logger.scope';
@@ -52,6 +52,7 @@ import type {
 	GitProviderId,
 	GitRefsSubProvider,
 	GitRemotesSubProvider,
+	GitRevisionSubProvider,
 	GitStagingSubProvider,
 	GitStashSubProvider,
 	GitStatusSubProvider,
@@ -76,7 +77,6 @@ import type { Repository, RepositoryChangeEvent } from './models/repository';
 import { RepositoryChange, RepositoryChangeComparisonMode } from './models/repository';
 import { deletedOrMissing } from './models/revision';
 import type { GitTag } from './models/tag';
-import type { GitTreeEntry } from './models/tree';
 import { sortRepositories } from './utils/-webview/sorting';
 import { calculateDistribution } from './utils/contributor.utils';
 import { getRemoteThemeIconString, getVisibilityCacheKey } from './utils/remote.utils';
@@ -1553,7 +1553,7 @@ export class GitProviderService implements Disposable {
 
 	@log<GitProviderService['getBranchAheadRange']>({ args: { 0: b => b.name } })
 	async getBranchAheadRange(branch: GitBranch): Promise<string | undefined> {
-		if (branch.state.ahead > 0) {
+		if (branch.upstream?.state.ahead) {
 			return createRevisionRange(branch.upstream?.name, branch.ref, '..');
 		}
 
@@ -1962,33 +1962,6 @@ export class GitProviderService implements Disposable {
 		return undefined;
 	}
 
-	@log()
-	async getTreeEntryForRevision(
-		repoPath: string | Uri | undefined,
-		path: string,
-		ref: string,
-	): Promise<GitTreeEntry | undefined> {
-		if (repoPath == null || !path) return undefined;
-
-		const { provider, path: rp } = this.getProvider(repoPath);
-		return provider.getTreeEntryForRevision(rp, provider.getRelativePath(path, rp), ref);
-	}
-
-	@log()
-	async getTreeForRevision(repoPath: string | Uri | undefined, ref: string): Promise<GitTreeEntry[]> {
-		if (repoPath == null) return [];
-
-		const { provider, path } = this.getProvider(repoPath);
-		return provider.getTreeForRevision(path, ref);
-	}
-
-	@gate()
-	@log()
-	getRevisionContent(repoPath: string | Uri, path: string, ref: string): Promise<Uint8Array | undefined> {
-		const { provider, path: rp } = this.getProvider(repoPath);
-		return provider.getRevisionContent(rp, path, ref);
-	}
-
 	@log({ exit: true })
 	async getUniqueRepositoryId(repoPath: string | Uri): Promise<string | undefined> {
 		return this.commits(repoPath).getInitialCommitSha?.();
@@ -2113,6 +2086,11 @@ export class GitProviderService implements Disposable {
 	@log({ singleLine: true })
 	remotes(repoPath: string | Uri): GitSubProviderForRepo<GitRemotesSubProvider> {
 		return this.getSubProviderProxy(repoPath, 'remotes');
+	}
+
+	@log({ singleLine: true })
+	revision(repoPath: string | Uri): GitSubProviderForRepo<GitRevisionSubProvider> {
+		return this.getSubProviderProxy(repoPath, 'revision');
 	}
 
 	@log({ singleLine: true })

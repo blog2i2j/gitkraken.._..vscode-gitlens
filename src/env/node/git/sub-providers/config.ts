@@ -4,8 +4,10 @@ import { Uri } from 'vscode';
 import type { GitConfigKeys } from '../../../../constants';
 import type { Container } from '../../../../container';
 import type { GitCache } from '../../../../git/cache';
+import { GitErrorHandling } from '../../../../git/commandOptions';
 import type { GitConfigSubProvider, GitDir } from '../../../../git/gitProvider';
 import type { GitUser } from '../../../../git/models/user';
+import { getBestPath } from '../../../../system/-webview/path';
 import { gate } from '../../../../system/decorators/-webview/gate';
 import { debug, log } from '../../../../system/decorators/log';
 import { Logger } from '../../../../system/logger';
@@ -28,8 +30,13 @@ export class ConfigGitSubProvider implements GitConfigSubProvider {
 		return this.git.config__get(key, repoPath);
 	}
 
-	setConfig(repoPath: string, key: GitConfigKeys, value: string | undefined): Promise<void> {
-		return this.git.config__set(key, value, repoPath);
+	async setConfig(repoPath: string, key: GitConfigKeys, value: string | undefined): Promise<void> {
+		await this.git.exec(
+			{ cwd: repoPath ?? '', local: true },
+			'config',
+			'--local',
+			...(value == null ? ['--unset', key] : [key, value]),
+		);
 	}
 
 	@gate()
@@ -81,7 +88,12 @@ export class ConfigGitSubProvider implements GitConfigSubProvider {
 
 			const author = `${user.name} <${user.email}>`;
 			// Check if there is a mailmap for the current user
-			const mappedAuthor = await this.git.check_mailmap(repoPath, author);
+			const mappedAuthor = await this.git.exec(
+				{ cwd: repoPath, errors: GitErrorHandling.Ignore },
+				'check-mailmap',
+				author,
+			);
+
 			if (mappedAuthor != null && mappedAuthor.length !== 0 && author !== mappedAuthor) {
 				const match = mappedAuthorRegex.exec(mappedAuthor);
 				if (match != null) {
@@ -99,6 +111,13 @@ export class ConfigGitSubProvider implements GitConfigSubProvider {
 			this.cache.repoInfo?.set(repoPath, { ...repo, user: null });
 			return undefined;
 		}
+	}
+
+	@gate()
+	@debug<NonNullable<ConfigGitSubProvider>['getDefaultWorktreePath']>({ exit: r => `returned ${r}` })
+	async getDefaultWorktreePath(repoPath: string): Promise<string | undefined> {
+		const gitDir = await this.getGitDir(repoPath);
+		return getBestPath(Uri.joinPath(gitDir.commonUri ?? gitDir.uri, '..'));
 	}
 
 	@gate()

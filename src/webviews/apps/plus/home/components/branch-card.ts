@@ -130,19 +130,18 @@ export const branchCardStyles = css`
 		gap: 0.6rem;
 	}
 
-	/*
-	.branch-item__actions {
+	.branch-item__collapsed-actions {
 		position: absolute;
+		z-index: var(--gl-branch-card-actions-zindex, 2);
 		right: 0.4rem;
 		bottom: 0.4rem;
 		padding: 0.2rem 0.4rem;
 		background-color: var(--gl-card-hover-background);
 	}
 
-	.branch-item:not(:focus-within):not(:hover) .branch-item__actions {
+	.branch-item:not(:focus-within):not(:hover) .branch-item__collapsed-actions {
 		${srOnlyStyles}
 	}
-	*/
 
 	.pill {
 		--gl-pill-border: color-mix(in srgb, transparent 80%, var(--color-foreground));
@@ -551,8 +550,10 @@ export abstract class GlBranchCardBase extends GlElement {
 
 	protected renderTracking(showWip = false): TemplateResult | NothingType {
 		if (this.branch.upstream == null) return nothing;
-		const ahead = this.branch.state.ahead ?? 0;
-		const behind = this.branch.state.behind ?? 0;
+
+		const { state } = this.branch.upstream;
+		// const ahead = this.branch.state.ahead ?? 0;
+		// const behind = this.branch.state.behind ?? 0;
 
 		let working = 0;
 		let wipTooltip;
@@ -569,23 +570,21 @@ export abstract class GlBranchCardBase extends GlElement {
 		}
 
 		let tooltip;
-		if (this.branch.upstream?.missing) {
+		if (this.branch.upstream.missing) {
 			tooltip = html`${renderBranchName(this.branch.name)} is missing its upstream
 			${renderBranchName(this.branch.upstream.name)}`;
 		} else {
-			let ahead = false;
 			const status: string[] = [];
-			if (this.branch.state.behind) {
-				status.push(`${pluralize('commit', this.branch.state.behind)} behind`);
+			if (state.behind) {
+				status.push(`${pluralize('commit', state.behind)} behind`);
 			}
-			if (this.branch.state.ahead) {
-				ahead = true;
-				status.push(`${pluralize('commit', this.branch.state.ahead)} ahead`);
+			if (state.ahead) {
+				status.push(`${pluralize('commit', state.ahead)} ahead of`);
 			}
 
 			if (status.length) {
-				tooltip = html`${renderBranchName(this.branch.name)} is ${status.join(', ')}${ahead ? ' of' : ''}
-				${renderBranchName(this.branch.upstream?.name)}`;
+				tooltip = html`${renderBranchName(this.branch.name)} is
+				${status.join(', ')}${renderBranchName(this.branch.upstream?.name)}`;
 			} else {
 				tooltip = html`${renderBranchName(this.branch.name)} is up to date with
 				${renderBranchName(this.branch.upstream?.name)}`;
@@ -598,8 +597,8 @@ export abstract class GlBranchCardBase extends GlElement {
 				colorized
 				outlined
 				always-show
-				ahead=${ahead}
-				behind=${behind}
+				ahead=${state.ahead}
+				behind=${state.behind}
 				working=${working}
 				?missingUpstream=${this.branch.upstream?.missing ?? false}
 			></gl-tracking-pill>
@@ -621,6 +620,16 @@ export abstract class GlBranchCardBase extends GlElement {
 		if (!actions?.length) return nothing;
 
 		return html`<action-nav>${actions}</action-nav>`;
+	}
+
+	protected abstract getCollapsedActions(): TemplateResult[];
+	protected renderCollapsedActions(): TemplateResult | NothingType {
+		if (this.expanded) return nothing;
+
+		const actions = this.getCollapsedActions?.();
+		if (!actions?.length) return nothing;
+
+		return html`<action-nav class="branch-item__collapsed-actions">${actions}</action-nav>`;
 	}
 
 	protected createCommandLink<T>(command: GlCommands, args?: T | any): string {
@@ -843,8 +852,33 @@ export class GlBranchCard extends GlBranchCardBase {
 				<div class="branch-item__container">
 					${this.renderBranchItem(this.renderBranchActions())}${this.renderPrItem()}${this.renderIssuesItem()}
 				</div>
+				${this.renderCollapsedActions()}
 			</gl-card>
 		`;
+	}
+
+	protected getCollapsedActions(): TemplateResult[] {
+		const actions = [];
+
+		if (this.branch.worktree) {
+			actions.push(
+				html`<action-item
+					label="Open Worktree"
+					icon="browser"
+					href=${this.createCommandLink('gitlens.home.openWorktree')}
+				></action-item>`,
+			);
+		} else {
+			actions.push(
+				html`<action-item
+					label="Switch to Branch..."
+					icon="gl-switch"
+					href=${this.createCommandLink('gitlens.home.switchToBranch')}
+				></action-item>`,
+			);
+		}
+
+		return actions;
 	}
 
 	protected getBranchActions(): TemplateResult[] {
